@@ -3,6 +3,7 @@ local G = love.graphics
 require("helper")
 require("input")
 require("map")
+require("entity")
 require("world")
 require("game")
 
