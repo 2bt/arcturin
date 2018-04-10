@@ -24,6 +24,9 @@ function game:update()
 
 	for _, input in ipairs(self.inputs) do
 		input:update()
+		if not input.hero and not (input.start or input.a) then
+			self.world:add_hero(input)
+		end
 	end
 
 	self.world:update()

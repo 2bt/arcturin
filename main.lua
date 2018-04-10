@@ -12,7 +12,7 @@ W = 320
 H = 180
 love.mouse.setVisible(false)
 G.setFont(G.newFont(14))
-G.setBackgroundColor(0.1, 0.1, 0.1)
+G.setBackgroundColor(0.2, 0.2, 0.2)
 
 game:init()
 
@@ -23,7 +23,6 @@ end
 
 
 function love.draw()
-	G.setScissor()
 	local w = G.getWidth()
 	local h = G.getHeight()
 	if w / h < W / H then
@@ -39,6 +38,7 @@ function love.draw()
 	end
 
 	game:draw()
+	G.setScissor()
 end
 
 

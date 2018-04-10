@@ -2,7 +2,7 @@ local G = love.graphics
 
 World = Object:new()
 function World:init()
-	self.map    = Map("assets/map.json")
+	self.map = Map("assets/map.json")
 
 	self.entities = {}
 --	self.new_entities = {}
@@ -10,15 +10,17 @@ function World:init()
 --	self.heroes = {}
 
 
-	table.insert(self.entities, Hero(150, 100))
 
-	self.camera = {
+	self.cam = {
 		x = 120,
 		y = 72,
 		w = W,
 		h = H
 	}
 
+end
+function World:add_hero(input)
+	table.insert(self.entities, Hero(input, 150, 100))
 end
 function World:update()
 
@@ -36,9 +38,55 @@ function World:update()
 	end
 
 
-	-- horizintal collision
+	-- horizontal collision
+	for i, e in ipairs(self.entities) do
+		if e.alive then
+			-- map
+			if e.next_x and e.next_x ~= e.box.x then
+				e.box.x = e.next_x
+				local dx = self.map:collision(e.box, "x")
+				if dx ~= 0 then
+					e:on_collision("x", dx, nil)
+				end
+			end
+			-- entities
+			for j = i + 1, #self.entities do
+				local f = self.entities[j]
+				if f.alive then
+					local dx = collision(e.box, f.box, "x")
+					if dx ~= 0 then
+						e:on_collision("x", dx, f)
+						f:on_collision("x", -dx, e)
+					end
+				end
+			end
+		end
+	end
 
 	-- vertical collision
+	for i, e in ipairs(self.entities) do
+		if e.alive then
+			-- map
+			if e.next_y and e.next_y ~= e.box.y then
+				e.box.y = e.next_y
+				local dy = self.map:collision(e.box, "y")
+				if dy ~= 0 then
+					e:on_collision("y", dy, nil)
+				end
+			end
+			-- entities
+			for j = i + 1, #self.entities do
+				local f = self.entities[j]
+				if f.alive then
+					local dy = collision(e.box, f.box, "y")
+					if dy ~= 0 then
+						e:on_collision("y", dy, f)
+						f:on_collision("y", -dy, e)
+					end
+				end
+			end
+		end
+	end
 
 	-- append new entities
 
@@ -46,14 +94,14 @@ function World:update()
 
 end
 function World:draw()
-	G.translate(-self.camera.x, -self.camera.y)
+	G.translate(-self.cam.x, -self.cam.y)
 
 
-	self.map:draw(self.camera)
+	self.map:draw(self.cam)
 
 	for _, e in ipairs(self.entities) do
 		if e.alive then
-			e:draw(self.camera)
+			e:draw(self.cam)
 		end
 	end
 end
