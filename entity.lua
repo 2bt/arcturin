@@ -10,34 +10,69 @@ end
 function Entity:update()
 end
 function Entity:draw(camera)
-	G.setColor(1, 1, 1)
+	G.setColor(1, 1, 1, 0.5)
 	G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 end
 
 
+Crate = Entity:new()
+function Crate:init(x, y)
+	self.box   = { w = 16, h = 16 }
+	self.box.x = x - self.box.w / 2
+	self.box.y = y - self.box.h
+	self.vy    = 0
+end
+function Crate:update()
+    self.vy = self.vy + GRAVITY
+    local vy = clamp(self.vy, -3, 3)
+	self.next_y = self.box.y + vy
+end
+function Crate:on_collision(axis, dist, entity)
+	if entity == nil
+	or getmetatable(entity) == Crate and entity.box.y > self.box.y
+	then
+		if axis == "y" then
+			self.box.y = self.box.y + dist
+			self.next_y = self.box.y
+			self.vy = 0
+		end
+	end
+
+end
+function Crate:draw(camera)
+	G.setColor(0.6, 0.5, 0.2, 0.5)
+	G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
+end
+
+
+
+
 Hero = Entity:new()
 function Hero:init(input, x, y)
-	self.input = input
-	input.hero = self
-	self.box = {
-		x = x,
-		y = y,
-		w = 12,
-		h = 20,
-	}
+	self.box   = { w = 12, h = 20 }
+	self.box.x = x - self.box.w / 2
+	self.box.y = y - self.box.h
+	self.vy    = 0
+
 	self.vx           = 0
-	self.vy           = 0
 	self.dir          = 1
 	self.in_air       = true
 	self.jump_control = false
+
+	self.input = input
+	input.hero = self
 end
 function Hero:on_collision(axis, dist, entity)
-	if entity == nil then
+	if entity == nil
+	or getmetatable(entity) == Crate
+	then
 		if axis == "x" then
 			self.box.x = self.box.x + dist
+			self.next_x = self.box.x
 			self.vx = 0
 		elseif axis == "y" then
 			self.box.y = self.box.y + dist
+			self.next_y = self.box.y
 			self.vy = 0
 			if dist < 0 then
 				self.in_air = false

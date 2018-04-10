@@ -9,6 +9,8 @@ function World:init()
 --	self.active_entities = {}
 --	self.heroes = {}
 
+	table.insert(self.entities, Crate(232, 210))
+	table.insert(self.entities, Crate(240, 180))
 
 
 	self.cam = {
@@ -41,7 +43,6 @@ function World:update()
 	-- horizontal collision
 	for i, e in ipairs(self.entities) do
 		if e.alive then
-			-- map
 			if e.next_x and e.next_x ~= e.box.x then
 				e.box.x = e.next_x
 				local dx = self.map:collision(e.box, "x")
@@ -49,7 +50,10 @@ function World:update()
 					e:on_collision("x", dx, nil)
 				end
 			end
-			-- entities
+		end
+	end
+	for i, e in ipairs(self.entities) do
+		if e.alive then
 			for j = i + 1, #self.entities do
 				local f = self.entities[j]
 				if f.alive then
@@ -63,10 +67,10 @@ function World:update()
 		end
 	end
 
+
 	-- vertical collision
 	for i, e in ipairs(self.entities) do
 		if e.alive then
-			-- map
 			if e.next_y and e.next_y ~= e.box.y then
 				e.box.y = e.next_y
 				local dy = self.map:collision(e.box, "y")
@@ -74,7 +78,10 @@ function World:update()
 					e:on_collision("y", dy, nil)
 				end
 			end
-			-- entities
+		end
+	end
+	for i, e in ipairs(self.entities) do
+		if e.alive then
 			for j = i + 1, #self.entities do
 				local f = self.entities[j]
 				if f.alive then
