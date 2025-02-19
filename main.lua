@@ -1,24 +1,27 @@
 require("helper")
 require("box")
-require("model")
 require("input")
+require("model")
+require("animation_manager")
+
+require("actor")
+require("hero")
+
 require("map")
-require("entity")
 require("world")
 require("game")
 
-
+G = love.graphics
 W = 320
 H = 180
-local G = love.graphics
 G.setFont(G.newFont(14))
 G.setBackgroundColor(0.2, 0.2, 0.2)
 love.mouse.setVisible(false)
-game:init()
+Game:init()
 
 
 function love.update()
-    game:update()
+    Game:update()
 end
 
 
@@ -37,7 +40,7 @@ function love.draw()
         G.scale(h / H)
     end
 
-    game:draw()
+    Game:draw()
     G.setScissor()
 end
 
@@ -54,8 +57,8 @@ end
 
 
 function love.joystickadded(j)
-    game:add_joystick(j)
+    Game:add_joystick(j)
 end
 function love.joystickremoved(j)
-    game:remove_joystick(j)
+    Game:remove_joystick(j)
 end

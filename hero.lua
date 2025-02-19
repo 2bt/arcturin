@@ -1,54 +1,11 @@
-local G = love.graphics
-
-local GRAVITY      = 0.2
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.15
 
 
 
-Entity = Object:new {
-    alive = true,
-}
-function Entity:on_collision(axis, dist, entity)
-end
-function Entity:update()
-end
-function Entity:draw(camera)
-    G.setColor(1, 1, 1, 0.5)
-    G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-end
 
-
-Crate = Entity:new()
-function Crate:init(x, y)
-    self.box = Box.make_above(x, y, 16, 16)
-    self.vy  = 0
-end
-function Crate:update()
-    self.vy = self.vy + GRAVITY
-    local vy = clamp(self.vy, -3, 3)
-    self.next_y = self.box.y + vy
-end
-function Crate:on_collision(axis, dist, entity)
-    if entity == nil
-    or getmetatable(entity) == Crate and entity.box.y > self.box.y
-    then
-        if axis == "y" then
-            self.box.y = self.box.y + dist
-            self.next_y = self.box.y
-            self.vy = 0
-        end
-    end
-
-end
-function Crate:draw(camera)
-    G.setColor(0.6, 0.5, 0.2, 0.5)
-    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
-end
-
-
-Hero = Entity:new()
+Hero = Actor:new()
 
 -- Hero.model = Model("assets/turri.model")
 -- Hero.model.scale = 0.08
@@ -73,40 +30,17 @@ function Hero:init(input, x, y)
     self.is_aiming    = false
     self.jump_control = false
 
-    self.aim = 0 -- aim angle goes from 0 to 1
-    self:set_anim(ANIM_IDLE)
+    self.anim_manager = AnimationManager(self.model)
+    self.anim_manager:set_anim(ANIM_IDLE)
 
     self.input = input
     input.hero = self
 
 end
 
-function Hero:set_anim(a)
-    local anim = self.model.anims[a]
-    if self.anim == anim then
-        return
-    end
-    self.anim = anim
-    self.anim_frame = anim.start
-end
-function Hero:update_anim()
-
-    local anim = self.anim
-    self.anim_frame = self.anim_frame + anim.speed
-    if self.anim_frame > anim.stop then
-        if anim.loop then
-            self.anim_frame = self.anim_frame - anim.stop + anim.start
-        else
-            self.anim_frame = anim.stop
-        end
-    end
-
-end
-
-
-function Hero:on_collision(axis, dist, entity)
-    if entity == nil
-    or getmetatable(entity) == Crate
+function Hero:on_collision(axis, dist, other)
+    if other == nil
+    or getmetatable(other) == Crate
     then
         if axis == "x" then
             self.box.x = self.box.x + dist
@@ -130,7 +64,6 @@ function Hero:update()
     local shoot = input.b
 
 
-
     -- aiming
     if not self.in_air and self.vx == 0 then
         if not shoot then
@@ -151,8 +84,8 @@ function Hero:update()
                 self.dir = -self.dir
             end
 
-            self:set_anim(ANIM_AIM)
-            self.anim_frame = mix(self.anim.start, self.anim.stop, self.aim)
+            self.anim_manager:set_anim(ANIM_AIM)
+            self.anim_manager:set_anim_pos(self.aim)
         end
     end
     if not self.is_aiming then
@@ -161,7 +94,6 @@ function Hero:update()
         if input.dx ~= 0 then self.dir = input.dx end
 
         -- moving
-
         local acc = self.in_air and ACCEL_AIR or ACCEL_GROUND
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
 
@@ -184,12 +116,13 @@ function Hero:update()
                 end
                 if self.vy > -1 then self.jump_control = false end
             end
-            self:set_anim(ANIM_JUMP)
+            self.anim_manager:set_anim(ANIM_JUMP)
+
         else
             if self.vx == 0 then
-                self:set_anim(ANIM_IDLE)
+                self.anim_manager:set_anim(ANIM_IDLE)
             else
-                self:set_anim(ANIM_RUN)
+                self.anim_manager:set_anim(ANIM_RUN)
             end
         end
         self.old_jump = jump
@@ -223,7 +156,7 @@ function Hero:update()
 --      end
 --  end
 
-    self:update_anim()
+    self.anim_manager:update()
 end
 
 function Hero:draw(camera)
@@ -231,17 +164,13 @@ function Hero:draw(camera)
     G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
 
-
-
-    -- render model
     G.push()
     G.translate(self.box.x + self.box.w / 2, self.box.y + self.box.h)
     G.scale(self.dir, 1)
     G.scale(self.model.scale)
 
-    local lt = self.model:get_local_transform(self.anim_frame)
+    local lt = self.anim_manager.lt
     self.model:draw(lt)
-
 
     G.pop()
 end

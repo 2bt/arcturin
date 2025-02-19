@@ -83,8 +83,6 @@ function Model:get_global_transform(local_transform)
 end
 
 -- drawing
-
-local G = love.graphics
 local function draw_concav_poly(p)
     if #p < 6 then return end
     local status, err = pcall(function()

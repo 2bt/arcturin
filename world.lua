@@ -1,19 +1,10 @@
-local G = love.graphics
-
-World = Object:new()
+World = {}
 function World:init()
 
-    self.map = Map("assets/map.json")
-    self.entities = {}
+    self.map    = Map("assets/map.json")
+    self.actors = {}
 
---  self.new_entities = {}
---  self.active_entities = {}
---  self.heroes = {}
-
-    table.insert(self.entities, Crate(232, 210))
-    table.insert(self.entities, Crate(240, 180))
-
-
+    self.hero   = nil
     self.cam = Box(0, 0, W, H)
 
 end
@@ -23,27 +14,27 @@ function World:add_hero(input)
 
     self.cam:set_center(self.hero.box:get_center())
 
-    table.insert(self.entities, self.hero)
+    table.insert(self.actors, self.hero)
 
 end
 function World:update()
 
-    -- update / delete entities
+    -- update / delete actors
     local j = 1
-    for i, e in ipairs(self.entities) do
+    for i, e in ipairs(self.actors) do
         e:update()
         if e.alive then
-            self.entities[j] = e
+            self.actors[j] = e
             j = j + 1
         end
     end
-    for i = j, #self.entities do
-        self.entities[i] = nil
+    for i = j, #self.actors do
+        self.actors[i] = nil
     end
 
 
     -- horizontal collision
-    for i, e in ipairs(self.entities) do
+    for i, e in ipairs(self.actors) do
         if e.alive then
             if e.next_x and e.next_x ~= e.box.x then
                 e.box.x = e.next_x
@@ -54,10 +45,10 @@ function World:update()
             end
         end
     end
-    for i, e in ipairs(self.entities) do
+    for i, e in ipairs(self.actors) do
         if e.alive then
-            for j = i + 1, #self.entities do
-                local f = self.entities[j]
+            for j = i + 1, #self.actors do
+                local f = self.actors[j]
                 if f.alive then
                     local dx = collision(e.box, f.box, "x")
                     if dx ~= 0 then
@@ -71,7 +62,7 @@ function World:update()
 
 
     -- vertical collision
-    for i, e in ipairs(self.entities) do
+    for i, e in ipairs(self.actors) do
         if e.alive then
             if e.next_y and e.next_y ~= e.box.y then
                 e.box.y = e.next_y
@@ -82,10 +73,10 @@ function World:update()
             end
         end
     end
-    for i, e in ipairs(self.entities) do
+    for i, e in ipairs(self.actors) do
         if e.alive then
-            for j = i + 1, #self.entities do
-                local f = self.entities[j]
+            for j = i + 1, #self.actors do
+                local f = self.actors[j]
                 if f.alive then
                     local dy = collision(e.box, f.box, "y")
                     if dy ~= 0 then
@@ -97,7 +88,7 @@ function World:update()
         end
     end
 
-    -- append new entities
+    -- append new actors
 
     -- update camera
 
@@ -116,7 +107,7 @@ function World:draw()
 
     self.map:draw(self.cam)
 
-    for _, e in ipairs(self.entities) do
+    for _, e in ipairs(self.actors) do
         if e.alive then
             e:draw(self.cam)
         end

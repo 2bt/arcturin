@@ -1,1 +1,19 @@
-https://gamejolt.com/games/the-curse-of-issyos/119194
+# next steps
+
++ shooting
+
++ destructible walls
++ enemies
+  + walker
+  + ufo
+  + tank
+  + turret
+  + dragon
+
+
++ dying
++ level completion
++ keep score
++ level transition
++ game menu
+  + start screen

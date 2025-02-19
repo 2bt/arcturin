@@ -1,18 +1,14 @@
-local G = love.graphics
-
-
-game = {
+Game = {
     inputs = { Keyboard() },
 }
 
-function game:init()
-    self.world = World()
-
+function Game:init()
+    World:init()
 end
-function game:add_joystick(j)
+function Game:add_joystick(j)
     table.insert(self.inputs, Joystick(j))
 end
-function game:remove_joystick(j)
+function Game:remove_joystick(j)
     for i, input in ipairs(self.inputs) do
         if input.joy == j then
             table.remove(self.inputs, i)
@@ -20,19 +16,19 @@ function game:remove_joystick(j)
         end
     end
 end
-function game:update()
+function Game:update()
 
     for _, input in ipairs(self.inputs) do
         input:update()
         if not input.hero and not (input.start or input.a) then
-            self.world:add_hero(input)
+            World:add_hero(input)
         end
     end
 
-    self.world:update()
+    World:update()
 
 end
-function game:draw()
+function Game:draw()
     G.clear(0, 0, 0)
 
 --  G.setColor(255, 255, 255)
@@ -41,6 +37,6 @@ function game:draw()
 --  end
 
 
-    self.world:draw()
+    World:draw()
 
 end

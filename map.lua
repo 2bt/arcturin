@@ -1,7 +1,5 @@
 local json = require("dkjson")
-local G = love.graphics
 local TILE_SIZE = 8
-
 
 Map = Object:new()
 function Map:init(name)
