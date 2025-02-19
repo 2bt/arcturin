@@ -1,6 +1,6 @@
-local G = love.graphics
-
 require("helper")
+require("box")
+require("model")
 require("input")
 require("map")
 require("entity")
@@ -10,10 +10,10 @@ require("game")
 
 W = 320
 H = 180
-love.mouse.setVisible(false)
+local G = love.graphics
 G.setFont(G.newFont(14))
 G.setBackgroundColor(0.2, 0.2, 0.2)
-
+love.mouse.setVisible(false)
 game:init()
 
 
@@ -29,12 +29,12 @@ function love.draw()
         local f = w / W * H
         G.setScissor(0, (h - f) * 0.5, w, f)
         G.translate(0, (h - f) * 0.5)
-        G.scale(w / W, w / W)
+        G.scale(w / W)
     else
         local f = h / H * W
         G.setScissor((w - f) * 0.5, 0, f, h)
         G.translate((w - f) * 0.5, 0)
-        G.scale(h / H, h / H)
+        G.scale(h / H)
     end
 
     game:draw()

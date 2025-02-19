@@ -1,6 +1,6 @@
 local json = require("dkjson")
 local G = love.graphics
-TILE_SIZE = 8
+local TILE_SIZE = 8
 
 
 Map = Object:new()
@@ -16,8 +16,14 @@ function Map:init(name)
 
         if layer.type == "objectgroup" then
             if layer.name == "objects" then
-            end
+                for _, o in ipairs(layer.objects) do
+                    if o.name == "hero" then
+                        self.hero_x = o.x + o.width / 2
+                        self.hero_y = o.y + o.height
+                    end
 
+                end
+            end
         elseif layer.type == "tilelayer" then
             self.tile_data = layer.data
         end
@@ -26,7 +32,9 @@ function Map:init(name)
 
 end
 function Map:tile_at(x, y)
-    return self.tile_data[y * self.w + x + 1] or 0
+    if x < 0 or x >= self.w then return 1 end
+    if y < 0 or y >= self.h then return 1 end
+    return self.tile_data[y * self.w + x + 1]
 end
 function Map:collision(box, axis, vel_y)
     vel_y = vel_y or 0
@@ -66,7 +74,7 @@ function Map:draw(box)
     local y1 = math.floor(box.y / TILE_SIZE)
     local y2 = math.floor((box.y + box.h) / TILE_SIZE)
 
-    G.setColor(0.5, 0.2, 0.2)
+    G.setColor(0.2, 0.2, 0.3)
     for x = x1, x2 do
         for y = y1, y2 do
             local t = self:tile_at(x, y)

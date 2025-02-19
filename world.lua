@@ -2,9 +2,10 @@ local G = love.graphics
 
 World = Object:new()
 function World:init()
-    self.map = Map("assets/map.json")
 
+    self.map = Map("assets/map.json")
     self.entities = {}
+
 --  self.new_entities = {}
 --  self.active_entities = {}
 --  self.heroes = {}
@@ -13,16 +14,17 @@ function World:init()
     table.insert(self.entities, Crate(240, 180))
 
 
-    self.cam = {
-        x = 120,
-        y = 72,
-        w = W,
-        h = H
-    }
+    self.cam = Box(0, 0, W, H)
 
 end
 function World:add_hero(input)
-    table.insert(self.entities, Hero(input, 150, 100))
+
+    self.hero = Hero(input, self.map.hero_x, self.map.hero_y)
+
+    self.cam:set_center(self.hero.box:get_center())
+
+    table.insert(self.entities, self.hero)
+
 end
 function World:update()
 
@@ -98,6 +100,14 @@ function World:update()
     -- append new entities
 
     -- update camera
+
+    local cx, cy = self.cam:get_center()
+    local x, y = self.hero.box:get_center()
+    local pad_x = W / 8
+    local pad_y = H / 8
+    cx = clamp(cx, x - pad_x, x + pad_x)
+    cy = clamp(cy, y - pad_y, y + pad_y)
+    self.cam:set_center(cx, cy)
 
 end
 function World:draw()
