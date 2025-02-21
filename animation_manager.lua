@@ -9,7 +9,7 @@ function AnimationManager:init(model)
     self.a2_frame    = 0
 end
 
-function AnimationManager:set_anim(anim_index, blend_time)
+function AnimationManager:play(anim_index, blend_time)
     blend_time = blend_time or 3
 
     local a = self.model.anims[anim_index]
@@ -18,9 +18,9 @@ function AnimationManager:set_anim(anim_index, blend_time)
     end
 
     if blend_time > 0 then
-        self.a2       = self.a1
-        self.a2_frame = self.a1_frame
-        self.blend    = 1
+        self.a2          = self.a1
+        self.a2_frame    = self.a1_frame
+        self.blend       = 1
         self.blend_speed = 1 / blend_time
     else
         self.a2          = nil
@@ -33,7 +33,7 @@ function AnimationManager:set_anim(anim_index, blend_time)
     self.a1_frame = a.start
 end
 
-function AnimationManager:set_anim_pos(p)
+function AnimationManager:seek(p)
     self.a1_frame = mix(self.a1.start, self.a1.stop, p)
 end
 

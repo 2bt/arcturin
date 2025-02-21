@@ -5,6 +5,7 @@ Game = {
 function Game:init()
     World:init()
 end
+
 function Game:add_joystick(j)
     table.insert(self.inputs, Joystick(j))
 end
@@ -16,6 +17,7 @@ function Game:remove_joystick(j)
         end
     end
 end
+
 function Game:update()
 
     for _, input in ipairs(self.inputs) do
@@ -26,8 +28,8 @@ function Game:update()
     end
 
     World:update()
-
 end
+
 function Game:draw()
     G.clear(0, 0, 0)
 

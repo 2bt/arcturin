@@ -1,7 +1,7 @@
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.15
-
+local JUMP_HEIGHT  = 5
 
 
 
@@ -31,31 +31,13 @@ function Hero:init(input, x, y)
     self.jump_control = false
 
     self.anim_manager = AnimationManager(self.model)
-    self.anim_manager:set_anim(ANIM_IDLE)
+    self.anim_manager:play(ANIM_IDLE)
 
     self.input = input
     input.hero = self
 
 end
 
-function Hero:on_collision(axis, dist, other)
-    if other == nil
-    or getmetatable(other) == Crate
-    then
-        if axis == "x" then
-            self.box.x = self.box.x + dist
-            self.next_x = self.box.x
-            self.vx = 0
-        elseif axis == "y" then
-            self.box.y = self.box.y + dist
-            self.next_y = self.box.y
-            self.vy = 0
-            if dist < 0 then
-                self.in_air = false
-            end
-        end
-    end
-end
 
 
 function Hero:update()
@@ -63,17 +45,17 @@ function Hero:update()
     local jump  = input.a
     local shoot = input.b
 
-
     -- aiming
     if not self.in_air and self.vx == 0 then
         if not shoot then
             self.is_aiming = false
         else
+
+            -- start aiming
             if not self.is_aiming then
                 self.is_aiming = true
-                self.aim = 0.5
+                self.aim = 0.5 -- neutral position
             end
-
 
             self.aim = self.aim - self.dir * input.dx * 0.02
             if self.aim > 1.0 then
@@ -84,10 +66,11 @@ function Hero:update()
                 self.dir = -self.dir
             end
 
-            self.anim_manager:set_anim(ANIM_AIM)
-            self.anim_manager:set_anim_pos(self.aim)
+            self.anim_manager:play(ANIM_AIM)
+            self.anim_manager:seek(self.aim)
         end
     end
+
     if not self.is_aiming then
 
         -- turn
@@ -103,7 +86,7 @@ function Hero:update()
             if input.dy > 0 then
                 fall_though = true
             else
-                self.vy           = -4
+                self.vy           = -JUMP_HEIGHT
                 self.jump_control = true
                 self.in_air       = true
             end
@@ -116,52 +99,40 @@ function Hero:update()
                 end
                 if self.vy > -1 then self.jump_control = false end
             end
-            self.anim_manager:set_anim(ANIM_JUMP)
-
+            self.anim_manager:play(ANIM_JUMP)
         else
             if self.vx == 0 then
-                self.anim_manager:set_anim(ANIM_IDLE)
+                self.anim_manager:play(ANIM_IDLE)
             else
-                self.anim_manager:set_anim(ANIM_RUN)
+                self.anim_manager:play(ANIM_RUN)
             end
         end
         self.old_jump = jump
 
     end
 
+
+    World:move_x(self, self.vx)
+
     -- gravity
     self.vy = self.vy + GRAVITY
     local vy = clamp(self.vy, -3, 3)
+
     self.in_air = true
+    if World:move_y(self, vy) then
+        if vy > 0 then
+            self.in_air = false
+        end
+        self.vy = 0
+    end
 
-    self.next_x = self.box.x + self.vx
-    self.next_y = self.box.y + vy
-
---  p.x = p.x + p.vx
---  update_player_box(p)
---  local cx = self:collision(p.box, "x")
---  if cx ~= 0 then
---      p.x = p.x + cx
---      p.vx = 0
---  end
-
-
---  update_player_box(p)
---  local cy = self:collision(p.box, "y", not fall_though and vy)
---  if cy ~= 0 then
---      p.y = p.y + cy
---      p.vy = 0
---      if cy < 0 then
---          p.in_air = false
---      end
---  end
 
     self.anim_manager:update()
 end
 
 function Hero:draw(camera)
-    G.setColor(1, 1, 1, 0.1)
-    G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+    -- G.setColor(1, 1, 1, 0.1)
+    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
 
     G.push()
@@ -169,8 +140,7 @@ function Hero:draw(camera)
     G.scale(self.dir, 1)
     G.scale(self.model.scale)
 
-    local lt = self.anim_manager.lt
-    self.model:draw(lt)
+    self.model:draw(self.anim_manager.lt)
 
     G.pop()
 end

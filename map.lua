@@ -34,31 +34,30 @@ function Map:tile_at(x, y)
     if y < 0 or y >= self.h then return 1 end
     return self.tile_data[y * self.w + x + 1]
 end
-function Map:collision(box, axis, vel_y)
-    vel_y = vel_y or 0
+
+function Map:collision(box, axis)
+    local overlap_func = axis == "x" and Box.overlap_x or Box.overlap_y
 
     local x1 = math.floor(box.x / TILE_SIZE)
-    local x2 = math.floor((box.x + box.w) / TILE_SIZE)
+    local x2 = math.floor(box:right() / TILE_SIZE)
     local y1 = math.floor(box.y / TILE_SIZE)
-    local y2 = math.floor((box.y + box.h) / TILE_SIZE)
+    local y2 = math.floor(box:bottom() / TILE_SIZE)
 
-    local b = { w = TILE_SIZE, h = TILE_SIZE }
+    local b = Box(0, 0, TILE_SIZE, TILE_SIZE)
     local d = 0
 
     for x = x1, x2 do
         for y = y1, y2 do
             local t = self:tile_at(x, y)
-            if t > 0
-            then
+            if t > 0 then
                 b.x = x * TILE_SIZE
                 b.y = y * TILE_SIZE
-                local e = collision(box, b, axis)
+                local e = overlap_func(box, b)
 
                 if t == 1 then
                     if math.abs(e) > math.abs(d) then d = e end
-                elseif t == 9 then
-                    if axis == "y" and vel_y > 0 and e < 0 and -e <= vel_y + 0.001 then d = e end
                 end
+
             end
         end
     end
@@ -68,9 +67,9 @@ end
 function Map:draw(box)
 
     local x1 = math.floor(box.x / TILE_SIZE)
-    local x2 = math.floor((box.x + box.w) / TILE_SIZE)
+    local x2 = math.floor(box:right() / TILE_SIZE)
     local y1 = math.floor(box.y / TILE_SIZE)
-    local y2 = math.floor((box.y + box.h) / TILE_SIZE)
+    local y2 = math.floor(box:bottom() / TILE_SIZE)
 
     G.setColor(0.2, 0.2, 0.3)
     for x = x1, x2 do
@@ -83,6 +82,16 @@ function Map:draw(box)
                     TILE_SIZE,
                     TILE_SIZE)
             end
+
+            -- if t == 9 then
+            --     G.rectangle("fill",
+            --         x * TILE_SIZE,
+            --         y * TILE_SIZE,
+            --         TILE_SIZE,
+            --         TILE_SIZE / 4)
+            -- end
+
+
         end
     end
 

@@ -16,3 +16,27 @@ function Box:set_center(x, y)
     self.x = x - self.w / 2
     self.y = y - self.h / 2
 end
+
+function Box:right()
+    return self.x + self.w
+end
+function Box:bottom()
+    return self.y + self.h
+end
+function Box:overlaps(other)
+    return self.x < other.x + other.w and self:right() > other.x and
+           self.y < other.y + other.h and self:bottom() > other.y
+end
+
+function Box:overlap_x(other)
+    if not self:overlaps(other) then return 0 end
+    local d1 = other:right() - self.x
+    local d2 = other.x - self:right()
+    return math.abs(d1) < math.abs(d2) and d1 or d2
+end
+function Box:overlap_y(other)
+    if not self:overlaps(other) then return 0 end
+    local d1 = other:bottom() - self.y
+    local d2 = other.y - self:bottom()
+    return math.abs(d1) < math.abs(d2) and d1 or d2
+end

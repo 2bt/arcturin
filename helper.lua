@@ -33,29 +33,6 @@ function mix(a, b, x)
     return a * (1 - x) + b * x
 end
 
-
-function collision(a, b, axis)
-    if a.x >= b.x + b.w
-    or a.y >= b.y + b.h
-    or a.x + a.w <= b.x
-    or a.y + a.h <= b.y then return 0 end
-
-    local dx = b.x + b.w - a.x
-    local dy = b.y + b.h - a.y
-
-    local dx2 = b.x - a.x - a.w
-    local dy2 = b.y - a.y - a.h
-
-    if axis == "x" then
-        return math.abs(dx) < math.abs(dx2) and dx or dx2
-    elseif axis == "y" then
-        return math.abs(dy) < math.abs(dy2) and dy or dy2
-    else
-        return 1
-    end
-end
-
-
 function table.tostring(t)
     local buf = {}
     local function w(o, s, p)

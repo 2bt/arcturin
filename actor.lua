@@ -3,8 +3,6 @@ GRAVITY = 0.2
 Actor = Object:new {
     alive = true,
 }
-function Actor:on_collision(axis, dist, other)
-end
 function Actor:update()
 end
 function Actor:draw(camera)
