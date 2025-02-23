@@ -14,7 +14,7 @@ local ANIM_JUMP   = 4
 
 local HeroBullet = Actor:new()
 function HeroBullet:init(x, y, dir)
-    self.box    = Box(x - 5, y - 3, 10, 4)
+    self.box    = Box(x - 5, y - 2, 10, 4)
     self.dir    = dir
     self.hit    = false
     self.energy = 5
@@ -45,7 +45,7 @@ function HeroBullet:update()
     end
 end
 function HeroBullet:draw()
-    G.setColor(1, 1, 1, 0.8)
+    G.setColor(0.9, 1, 1, 0.8)
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
 end
 
@@ -96,8 +96,7 @@ function AimShot:update()
 
 end
 function AimShot:draw()
-    -- Actor.draw(self)
-    G.setColor(1, 1, 0.4, 0.8)
+    G.setColor(1, 1, 0.9, 0.8)
     G.push()
     G.translate(self.box:get_center())
     G.rotate(-self.a)
@@ -125,6 +124,9 @@ function Hero:init(input, x, y)
     self.prev_shoot    = false
     self.shoot_counter = 0
 
+    self.muzzle_x      = 0
+    self.muzzle_y      = 0
+
 
     self.anim_manager = AnimationManager(self.model)
     self.anim_manager:play(ANIM_IDLE)
@@ -134,6 +136,11 @@ function Hero:init(input, x, y)
 
 end
 
+function Hero:update_muzzle_pos()
+    local x, y = unpack(self.gt[18])
+    self.muzzle_x = self.box:center_x() + x * MODEL_SCALE * self.dir
+    self.muzzle_y = self.box:bottom()   + y * MODEL_SCALE
+end
 
 
 function Hero:update()
@@ -157,38 +164,7 @@ function Hero:update()
         self.aim_counter = 0
     end
 
-    if self.is_aiming then
 
-        if self.shoot_counter > 0 then
-            self.shoot_counter = self.shoot_counter - 1
-        else
-            self.shoot_counter = 2
-
-            -- self.aim = self.aim - self.dir * input.dx * 0.02
-            self.aim = self.aim - self.dir * input.dx * (1/16)
-            if self.aim > 1.0 then
-                self.aim = 2 - self.aim
-                self.dir = -self.dir
-            elseif self.aim < 0.0 then
-                self.aim = -self.aim
-                self.dir = -self.dir
-            end
-
-            self.anim_manager:play(ANIM_AIM)
-            self.anim_manager:seek(self.aim)
-            local lt = self.anim_manager:update()
-            self.gt = self.model:get_global_transform(lt)
-
-
-            -- make new aim shot
-            local x, y = unpack(self.gt[18])
-            x = self.box:center_x() + x * MODEL_SCALE * self.dir
-            y = self.box:bottom()   + y * MODEL_SCALE
-            local a = self.dir * self.aim * math.pi
-            World:add_actor(AimShot(x, y, a))
-        end
-
-    end
 
     if not self.is_aiming then
 
@@ -227,10 +203,6 @@ function Hero:update()
                 self.anim_manager:play(ANIM_RUN)
             end
         end
-
-
-        local lt = self.anim_manager:update()
-        self.gt = self.model:get_global_transform(lt)
     end
 
 
@@ -246,14 +218,50 @@ function Hero:update()
         self.vy = 0
     end
 
-    if shoot and not self.prev_shoot then
-        World:add_actor(HeroBullet(self.box:center_x() + self.dir * 5, self.box:center_y() - 2.5, self.dir))
+
+    if self.is_aiming then
+        -- aiming
+        if self.shoot_counter > 0 then
+            self.shoot_counter = self.shoot_counter - 1
+        else
+            self.shoot_counter = 2
+
+            -- self.aim = self.aim - self.dir * input.dx * 0.02
+            self.aim = self.aim - self.dir * input.dx * (1/16)
+            if self.aim > 1.0 then
+                self.aim = 2 - self.aim
+                self.dir = -self.dir
+            elseif self.aim < 0.0 then
+                self.aim = -self.aim
+                self.dir = -self.dir
+            end
+
+            -- update animation
+            self.anim_manager:play(ANIM_AIM)
+            self.anim_manager:seek(self.aim)
+            local lt = self.anim_manager:update()
+            self.gt = self.model:get_global_transform(lt)
+
+            self:update_muzzle_pos()
+
+            -- make new aim shot
+            local a = self.dir * self.aim * math.pi
+            World:add_actor(AimShot(self.muzzle_x, self.muzzle_y, a))
+        end
+
+    else
+
+        local lt = self.anim_manager:update()
+        self.gt = self.model:get_global_transform(lt)
+
+        if shoot and not self.prev_shoot then
+            self:update_muzzle_pos()
+            World:add_actor(HeroBullet(self.muzzle_x, self.muzzle_y, self.dir))
+        end
     end
 
     self.prev_jump  = jump
     self.prev_shoot = shoot
-
-
 
 end
 
@@ -266,9 +274,9 @@ function Hero:draw()
     G.translate(self.box:center_x(), self.box:bottom())
     G.scale(self.dir, 1)
     G.scale(MODEL_SCALE)
-
     self.model:draw(self.gt)
-
     G.pop()
+
+
 end
 

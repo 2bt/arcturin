@@ -11,7 +11,6 @@ end
 
 
 
-
 CrateParticle = Actor:new()
 function CrateParticle:init(x, y)
     self.box = Box(x-1, y-1, 2, 2)

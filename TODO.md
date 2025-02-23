@@ -1,14 +1,10 @@
 # next steps
 
-
-+ destructible walls
-  + different grades of destruction
-+ particles
-
++ crouch
 
 + enemies
-  + walker
   + ufo
+  + walker
   + tank
   + turret
   + dragon
