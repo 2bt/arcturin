@@ -20,7 +20,13 @@ function Crate:hit(amount)
     self.shield = self.shield - amount
     if self.shield <= 0 then
         self.alive = false
+
         -- TODO: explode
+        for i = 1, 10 do
+            World:add_actor(CrateParticle(
+                self.box:center_x() + love.math.random(-4, 4),
+                self.box:center_y() + love.math.random(-4, 4)))
+        end
     end
 end
 function Crate:update()

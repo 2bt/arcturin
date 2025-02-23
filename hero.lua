@@ -1,3 +1,5 @@
+MAX_VY = 3
+
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.15
@@ -8,7 +10,6 @@ local ANIM_IDLE   = 1
 local ANIM_RUN    = 2
 local ANIM_AIM    = 3
 local ANIM_JUMP   = 4
-
 
 
 local HeroBullet = Actor:new()
@@ -235,7 +236,7 @@ function Hero:update()
 
     -- gravity
     self.vy = self.vy + GRAVITY
-    local vy = clamp(self.vy, -3, 3)
+    local vy = clamp(self.vy, -MAX_VY, MAX_VY)
 
     self.in_air = true
     if World:move_y(self, vy) then
