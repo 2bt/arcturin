@@ -1,5 +1,4 @@
 local json = require("dkjson")
-local TILE_SIZE = 8
 
 Map = Object:new()
 function Map:init(name)
@@ -28,6 +27,17 @@ function Map:init(name)
 
     end
 
+    local i = 1
+    for y = 0, self.h - 1 do
+        for x = 0, self.w - 1 do
+            if self.tile_data[i] == 2 then
+                self.tile_data[i] = 0
+                World:add_solid(Crate(x * TILE_SIZE, y * TILE_SIZE))
+            end
+            i = i + 1
+        end
+    end
+
 end
 function Map:tile_at(x, y)
     if x < 0 or x >= self.w then return 1 end
@@ -36,15 +46,14 @@ function Map:tile_at(x, y)
 end
 
 function Map:collision(box, axis)
-    local overlap_func = axis == "x" and Box.overlap_x or Box.overlap_y
-
     local x1 = math.floor(box.x / TILE_SIZE)
     local x2 = math.floor(box:right() / TILE_SIZE)
     local y1 = math.floor(box.y / TILE_SIZE)
     local y2 = math.floor(box:bottom() / TILE_SIZE)
 
     local b = Box(0, 0, TILE_SIZE, TILE_SIZE)
-    local d = 0
+    local overlap_func = axis == "x" and Box.overlap_x or Box.overlap_y
+    local overlap = 0
 
     for x = x1, x2 do
         for y = y1, y2 do
@@ -52,45 +61,36 @@ function Map:collision(box, axis)
             if t > 0 then
                 b.x = x * TILE_SIZE
                 b.y = y * TILE_SIZE
-                local e = overlap_func(box, b)
-
-                if t == 1 then
-                    if math.abs(e) > math.abs(d) then d = e end
+                local o = overlap_func(box, b)
+                if math.abs(o) > math.abs(overlap) then
+                    overlap = o
                 end
-
             end
         end
     end
 
-    return d
+    return overlap
 end
-function Map:draw(box)
+function Map:draw()
+    local cam = World.camera
 
-    local x1 = math.floor(box.x / TILE_SIZE)
-    local x2 = math.floor(box:right() / TILE_SIZE)
-    local y1 = math.floor(box.y / TILE_SIZE)
-    local y2 = math.floor(box:bottom() / TILE_SIZE)
+    local x1 = math.floor(cam.x / TILE_SIZE)
+    local x2 = math.floor(cam:right() / TILE_SIZE)
+    local y1 = math.floor(cam.y / TILE_SIZE)
+    local y2 = math.floor(cam:bottom() / TILE_SIZE)
 
-    G.setColor(0.2, 0.2, 0.3)
     for x = x1, x2 do
         for y = y1, y2 do
             local t = self:tile_at(x, y)
+
             if t == 1 then
+                G.setColor(0.2, 0.2, 0.3)
                 G.rectangle("fill",
                     x * TILE_SIZE,
                     y * TILE_SIZE,
                     TILE_SIZE,
                     TILE_SIZE)
             end
-
-            -- if t == 9 then
-            --     G.rectangle("fill",
-            --         x * TILE_SIZE,
-            --         y * TILE_SIZE,
-            --         TILE_SIZE,
-            --         TILE_SIZE / 4)
-            -- end
-
 
         end
     end

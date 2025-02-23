@@ -1,8 +1,11 @@
 # next steps
 
-+ shooting
 
 + destructible walls
+  + different grades of destruction
++ particles
+
+
 + enemies
   + walker
   + ufo
@@ -10,10 +13,10 @@
   + turret
   + dragon
 
-
 + dying
 + level completion
-+ keep score
 + level transition
 + game menu
   + start screen
+
++ keep score

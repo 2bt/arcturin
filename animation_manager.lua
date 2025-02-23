@@ -73,5 +73,5 @@ function AnimationManager:update()
 
         lerp_transform(self.lt, lt2, self.blend)
     end
-
+    return self.lt
 end

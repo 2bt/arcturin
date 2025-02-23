@@ -23,6 +23,14 @@ end
 function Box:bottom()
     return self.y + self.h
 end
+function Box:center_x()
+    return self.x + self.w / 2
+end
+function Box:center_y()
+    return self.y + self.h / 2
+end
+
+
 function Box:overlaps(other)
     return self.x < other.x + other.w and self:right() > other.x and
            self.y < other.y + other.h and self:bottom() > other.y

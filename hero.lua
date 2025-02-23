@@ -3,32 +3,127 @@ local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.15
 local JUMP_HEIGHT  = 5
 
+local MODEL_SCALE = 0.05
+local ANIM_IDLE   = 1
+local ANIM_RUN    = 2
+local ANIM_AIM    = 3
+local ANIM_JUMP   = 4
 
 
-Hero = Actor:new()
 
--- Hero.model = Model("assets/turri.model")
--- Hero.model.scale = 0.08
--- local ANIM_IDLE  = 2
--- local ANIM_RUN   = 1
--- local ANIM_JUMP  = 3
--- local ANIM_AIM   = 5
+local HeroBullet = Actor:new()
+function HeroBullet:init(x, y, dir)
+    self.box    = Box(x - 5, y - 3, 10, 4)
+    self.dir    = dir
+    self.hit    = false
+    self.energy = 5
+end
+function HeroBullet:update()
+    if self.hit then
+        self.alive = false
+        return
+    end
 
-Hero.model = Model("assets/ladus.model")
-Hero.model.scale = 0.05
-local ANIM_IDLE  = 1
-local ANIM_RUN   = 2
-local ANIM_AIM   = 3
-local ANIM_JUMP  = 4
+    -- check if still on screen
+    if not self.box:overlaps(World.camera) then
+        self.alive = false
+        return
+    end
 
+    local s = World:move_x(self, self.dir * 5)
+    if s then
+
+        local e = self.energy
+        if s.shield then e = math.min(e, s.shield) end
+        s:hit(e)
+
+        self.energy = self.energy - e
+        if self.energy <= 0 then
+            self.hit = true
+        end
+    end
+end
+function HeroBullet:draw()
+    G.setColor(1, 1, 1, 0.8)
+    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
+end
+
+
+
+local AIM_SHOT_SIZE = 5
+local AimShot = Actor:new()
+function AimShot:init(x, y, a)
+    self.box = Box(x - AIM_SHOT_SIZE/2, y - AIM_SHOT_SIZE/2, AIM_SHOT_SIZE, AIM_SHOT_SIZE)
+    self.a   = a
+    self.ttl = 15
+    self.hit = false
+end
+function AimShot:update()
+    if self.hit then
+        self.alive = false
+        return
+    end
+    -- check if still on screen
+    if not self.box:overlaps(World.camera) then
+        self.alive = false
+        return
+    end
+
+    self.ttl = self.ttl - 1
+    if self.ttl < 0 then
+        self.alive = false
+        return
+    end
+
+    local dx = math.sin(self.a) * 4
+    local dy = math.cos(self.a) * 4
+
+    local x = self.box.x + dx
+    local y = self.box.y + dy
+
+    local s = World:move_x(self, dx)
+    local t = World:move_y(self, dy)
+    s = s or t
+
+    self.box.x = x
+    self.box.y = y
+
+    if s then
+        s:hit(1)
+        self.hit = true
+    end
+
+end
+function AimShot:draw()
+    -- Actor.draw(self)
+    G.setColor(1, 1, 0.4, 0.8)
+    G.push()
+    G.translate(self.box:get_center())
+    G.rotate(-self.a)
+    G.polygon("fill", 0, 0, -5, -2, 0, 3, 5, -2)
+    G.pop()
+end
+
+
+Hero = Actor:new({
+    model = Model("assets/ladus.model"),
+})
 function Hero:init(input, x, y)
     self.box          = Box.make_above(x, y, 12, 22)
     self.vy           = 0
     self.vx           = 0
     self.dir          = 1
-    self.in_air       = true
+
     self.is_aiming    = false
+    self.aim_counter  = 0
+
+    self.in_air       = true
     self.jump_control = false
+
+    self.prev_jump     = false
+    self.prev_shoot    = false
+    self.shoot_counter = 0
+
 
     self.anim_manager = AnimationManager(self.model)
     self.anim_manager:play(ANIM_IDLE)
@@ -45,19 +140,31 @@ function Hero:update()
     local jump  = input.a
     local shoot = input.b
 
+
     -- aiming
-    if not self.in_air and self.vx == 0 then
-        if not shoot then
-            self.is_aiming = false
-        else
-
-            -- start aiming
-            if not self.is_aiming then
+    if not self.in_air and self.vx == 0 and shoot then
+        if not self.is_aiming then
+            self.aim_counter = self.aim_counter + 1
+            if self.aim_counter > 20 then
+                -- start aiming
                 self.is_aiming = true
-                self.aim = 0.5 -- neutral position
+                self.aim       = 0.5 -- neutral position
             end
+        end
+    else
+        self.is_aiming   = false
+        self.aim_counter = 0
+    end
 
-            self.aim = self.aim - self.dir * input.dx * 0.02
+    if self.is_aiming then
+
+        if self.shoot_counter > 0 then
+            self.shoot_counter = self.shoot_counter - 1
+        else
+            self.shoot_counter = 2
+
+            -- self.aim = self.aim - self.dir * input.dx * 0.02
+            self.aim = self.aim - self.dir * input.dx * (1/16)
             if self.aim > 1.0 then
                 self.aim = 2 - self.aim
                 self.dir = -self.dir
@@ -68,7 +175,18 @@ function Hero:update()
 
             self.anim_manager:play(ANIM_AIM)
             self.anim_manager:seek(self.aim)
+            local lt = self.anim_manager:update()
+            self.gt = self.model:get_global_transform(lt)
+
+
+            -- make new aim shot
+            local x, y = unpack(self.gt[18])
+            x = self.box:center_x() + x * MODEL_SCALE * self.dir
+            y = self.box:bottom()   + y * MODEL_SCALE
+            local a = self.dir * self.aim * math.pi
+            World:add_actor(AimShot(x, y, a))
         end
+
     end
 
     if not self.is_aiming then
@@ -79,10 +197,11 @@ function Hero:update()
         -- moving
         local acc = self.in_air and ACCEL_AIR or ACCEL_GROUND
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
+        World:move_x(self, self.vx)
 
         -- jumping
         local fall_though = false
-        if not self.in_air and jump and not self.old_jump then
+        if not self.in_air and jump and not self.prev_jump then
             if input.dy > 0 then
                 fall_though = true
             else
@@ -107,12 +226,12 @@ function Hero:update()
                 self.anim_manager:play(ANIM_RUN)
             end
         end
-        self.old_jump = jump
 
+
+        local lt = self.anim_manager:update()
+        self.gt = self.model:get_global_transform(lt)
     end
 
-
-    World:move_x(self, self.vx)
 
     -- gravity
     self.vy = self.vy + GRAVITY
@@ -126,21 +245,28 @@ function Hero:update()
         self.vy = 0
     end
 
+    if shoot and not self.prev_shoot then
+        World:add_actor(HeroBullet(self.box:center_x() + self.dir * 5, self.box:center_y() - 2.5, self.dir))
+    end
 
-    self.anim_manager:update()
+    self.prev_jump  = jump
+    self.prev_shoot = shoot
+
+
+
 end
 
-function Hero:draw(camera)
+function Hero:draw()
     -- G.setColor(1, 1, 1, 0.1)
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
 
     G.push()
-    G.translate(self.box.x + self.box.w / 2, self.box.y + self.box.h)
+    G.translate(self.box:center_x(), self.box:bottom())
     G.scale(self.dir, 1)
-    G.scale(self.model.scale)
+    G.scale(MODEL_SCALE)
 
-    self.model:draw(self.anim_manager.lt)
+    self.model:draw(self.gt)
 
     G.pop()
 end

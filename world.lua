@@ -1,43 +1,94 @@
+GRAVITY   = 0.2
+TILE_SIZE = 8
+
+
+
 World = {}
 function World:init()
-
-    self.map    = Map("assets/map.json")
     self.actors = {}
-
+    self.solids = {}
     self.hero   = nil
-    self.cam = Box(0, 0, W, H)
+    self.camera = Box(0, 0, W, H)
 
+    -- loading the map will fill up actors and solids
+    self.map = Map("assets/map.json")
 end
+
+function World:add_solid(solid)
+    table.insert(self.solids, solid)
+end
+
+function World:add_actor(actor)
+    table.insert(self.actors, actor)
+end
+
 function World:add_hero(input)
     self.hero = Hero(input, self.map.hero_x, self.map.hero_y)
-    table.insert(self.actors, self.hero)
+    self:add_actor(self.hero)
 
-    self.cam:set_center(self.hero.box:get_center())
+    self.camera:set_center(self.hero.box:get_center())
 end
 
+local dummy_solid = Solid:new()
 
 function World:move_x(actor, amount)
     actor.box.x = actor.box.x + amount
 
-    local dx = self.map:collision(actor.box, "x")
-    if dx ~= 0 then
-        actor.box.x = actor.box.x + dx
-        return true
+    local solid   = nil
+    local overlap = self.map:collision(actor.box, "x")
+    if overlap ~= 0 then
+        solid = dummy_solid
     end
 
-    return false
+    local overlap_area = 0
+    for _, s in ipairs(self.solids) do
+        local o = actor.box:overlap_x(s.box)
+        if o ~= 0 then
+            if math.abs(o) > math.abs(overlap) then
+                overlap = o
+                solid   = s
+            elseif math.abs(o) >= math.abs(overlap) then
+                local oa = math.abs(o * actor.box:overlap_y(s.box))
+                if oa > overlap_area then
+                    overlap = o
+                    solid   = s
+                end
+            end
+        end
+    end
+
+    actor.box.x = actor.box.x + overlap
+    return solid
 end
 
 function World:move_y(actor, amount)
     actor.box.y = actor.box.y + amount
 
-    local dy = self.map:collision(actor.box, "y")
-    if dy ~= 0 then
-        actor.box.y = actor.box.y + dy
-        return true
+    local solid   = nil
+    local overlap = self.map:collision(actor.box, "y")
+    if overlap ~= 0 then
+        solid = dummy_solid
     end
 
-    return false
+    local overlap_area = 0
+    for _, s in ipairs(self.solids) do
+        local o = actor.box:overlap_y(s.box)
+        if o ~= 0 then
+            if math.abs(o) > math.abs(overlap) then
+                overlap = o
+                solid   = s
+            elseif math.abs(o) >= math.abs(overlap) then
+                local oa = math.abs(o * actor.box:overlap_x(s.box))
+                if oa > overlap_area then
+                    overlap = o
+                    solid   = s
+                end
+            end
+        end
+    end
+
+    actor.box.y = actor.box.y + overlap
+    return solid
 end
 
 
@@ -57,53 +108,46 @@ function World:update()
     end
 
 
-    -- -- horizontal collision
-    -- for i, e in ipairs(self.actors) do
-    --     if e.alive then
-    --         if e.next_x and e.next_x ~= e.box.x then
-    --             e.box.x = e.next_x
-    --             local dx = self.map:collision(e.box, "x")
-    --             if dx ~= 0 then
-    --                 e:on_collision("x", dx, nil)
-    --             end
-    --         end
-    --     end
-    -- end
-
-    -- -- vertical collision
-    -- for i, e in ipairs(self.actors) do
-    --     if e.alive then
-    --         if e.next_y and e.next_y ~= e.box.y then
-    --             e.box.y = e.next_y
-    --             local dy = self.map:collision(e.box, "y")
-    --             if dy ~= 0 then
-    --                 e:on_collision("y", dy, nil)
-    --             end
-    --         end
-    --     end
-    -- end
-
+    -- update / delete solids
+    local j = 1
+    for i, e in ipairs(self.solids) do
+        e:update()
+        if e.alive then
+            self.solids[j] = e
+            j = j + 1
+        end
+    end
+    for i = j, #self.solids do
+        self.solids[i] = nil
+    end
 
 
     -- update camera
-    local cx, cy = self.cam:get_center()
+    local cx, cy = self.camera:get_center()
     local x, y = self.hero.box:get_center()
     local pad_x = W / 8
     local pad_y = H / 8
     cx = clamp(cx, x - pad_x, x + pad_x)
     cy = clamp(cy, y - pad_y, y + pad_y)
-    self.cam:set_center(cx, cy)
+    self.camera:set_center(cx, cy)
 
 end
 function World:draw()
-    G.translate(-self.cam.x, -self.cam.y)
+    G.translate(-self.camera.x, -self.camera.y)
 
+    self.map:draw()
 
-    self.map:draw(self.cam)
-
-    for _, e in ipairs(self.actors) do
-        if e.alive then
-            e:draw(self.cam)
+    for _, s in ipairs(self.solids) do
+        if s.alive then
+            s:draw()
         end
     end
+
+    for _, a in ipairs(self.actors) do
+        if a.alive then
+            a:draw()
+        end
+    end
+
+
 end

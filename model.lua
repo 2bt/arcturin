@@ -48,17 +48,19 @@ function Model:get_local_transform(frame)
                 break
             end
         end
-        -- ensure that both keyframes are set up
-        k1, k2 = k1 or k2, k2 or k1
-
-        local f1, x1, y1, a1 = unpack(k1)
-        local f2, x2, y2, a2 = unpack(k2)
-        local l = (frame - f1) / (f2 - f1)
-        lt[i] = {
-            mix(x1, x2, l),
-            mix(y1, y2, l),
-            mix(a1, a2, l),
-        }
+        if k1 and k2 then
+            local f1, x1, y1, a1 = unpack(k1)
+            local f2, x2, y2, a2 = unpack(k2)
+            local l = (frame - f1) / (f2 - f1)
+            lt[i] = {
+                mix(x1, x2, l),
+                mix(y1, y2, l),
+                mix(a1, a2, l),
+            }
+        else
+            local _, x, y, a = unpack(k1 or k2)
+            lt[i] = { x, y, a }
+        end
     end
     return lt
 end
@@ -112,11 +114,10 @@ local COLORS = {
     { 0.42, 0.37, 0.71 },
     { 0.58, 0.58, 0.58 },
 }
-function Model:draw(local_transform)
-    local gt = self:get_global_transform(local_transform)
+function Model:draw(global_transform)
     for i, p in ipairs(self.polys) do
         G.push()
-        local x, y, a = unpack(gt[p.bone.i])
+        local x, y, a = unpack(global_transform[p.bone.i])
         G.translate(x, y)
         G.rotate(a)
         local c = COLORS[p.color]

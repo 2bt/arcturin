@@ -5,6 +5,7 @@ require("model")
 require("animation_manager")
 
 require("actor")
+require("solid")
 require("hero")
 
 require("map")
