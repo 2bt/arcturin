@@ -1,13 +1,15 @@
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
-local ACCEL_AIR    = 0.15
+local ACCEL_AIR    = 0.25
+
 local JUMP_HEIGHT  = 5
 
 local MODEL_SCALE = 0.05
 local ANIM_IDLE   = 1
 local ANIM_RUN    = 2
-local ANIM_AIM    = 3
-local ANIM_JUMP   = 4
+local ANIM_CROUCH = 3
+local ANIM_AIM    = 4
+local ANIM_JUMP   = 5
 
 
 local HeroBullet = Object:new({
@@ -17,6 +19,10 @@ local HeroBullet = Object:new({
     vx    = 0,
     vy    = 0,
 })
+function HeroBullet:move_back()
+    self.box.x = self.box.x - self.vx
+    self.box.y = self.box.y - self.vy
+end
 function HeroBullet:update()
     -- check if still on screen
     if not self.box:overlaps(World.camera) then
@@ -64,6 +70,7 @@ function Laser:init(x, y, dir)
     self.box   = Box.make_centered(x, y, 10, 4)
     self.vx    = dir * 5
     self.power = 5
+    self:move_back()
 end
 function Laser:draw()
     G.setColor(0.9, 1, 1, 0.8)
@@ -79,6 +86,7 @@ function AimShot:init(x, y, a)
     self.vy  = math.cos(a) * 4
     self.a   = a
     self.ttl = 16
+    self:move_back()
 end
 function AimShot:draw()
     G.setColor(1, 1, 0.9, 0.8)
@@ -94,13 +102,37 @@ Hero = Object:new({
     alive = true,
     model = Model("assets/ladus.model"),
 })
+do
+    -- precalculate aim offsets
+    local ox = {}
+    local oy = {}
+    local a = AnimationManager(Hero.model)
+    a:play(ANIM_AIM, 0)
+    for i = 0, 1, 1/16 do
+        a:seek(i, 0)
+        local lt = a:update()
+        local gt = a.model:get_global_transform(lt)
+        local x, y = unpack(gt[18])
+        ox[i] = x * MODEL_SCALE
+        oy[i] = y * MODEL_SCALE
+        ox[i] = math.floor(ox[i] * 2 + 0.5) / 2
+        oy[i] = math.floor(oy[i] * 2 + 0.5) / 2
+    end
+    Hero.aim_offset = { x = ox, y = oy }
+end
+
+
+
 function Hero:init(input, x, y)
     self.box          = Box.make_above(x, y, 12, 22)
     self.vy           = 0
     self.vx           = 0
     self.dir          = 1
 
+    self.is_crouching = false
+
     self.is_aiming    = false
+    self.aim          = 0.5
     self.aim_counter  = 0
 
     self.in_air       = true
@@ -121,13 +153,6 @@ function Hero:init(input, x, y)
     input.hero = self
 
 end
-
-function Hero:update_muzzle_pos()
-    local x, y = unpack(self.gt[18])
-    self.muzzle_x = self.box:center_x() + x * MODEL_SCALE * self.dir
-    self.muzzle_y = self.box:bottom()   + y * MODEL_SCALE
-end
-
 
 function Hero:update()
     local input = self.input.state
@@ -150,8 +175,10 @@ function Hero:update()
     else
         self.is_aiming   = false
         self.aim_counter = 0
+        self.aim         = 0.5
     end
 
+    local is_crouching = false
 
     if not self.is_aiming then
 
@@ -184,10 +211,13 @@ function Hero:update()
             end
             self.anim_manager:play(ANIM_JUMP)
         else
-            if self.vx == 0 then
-                self.anim_manager:play(ANIM_IDLE)
-            else
+            if self.vx ~= 0 then
                 self.anim_manager:play(ANIM_RUN)
+            elseif input.down then
+                is_crouching = true
+                self.anim_manager:play(ANIM_CROUCH)
+            else
+                self.anim_manager:play(ANIM_IDLE)
             end
         end
     end
@@ -207,15 +237,21 @@ function Hero:update()
 
 
     if self.is_aiming then
-        -- aiming
+
         if self.shoot_counter > 0 then
             self.shoot_counter = self.shoot_counter - 1
-
-            local lt = self.anim_manager:update()
-            self.gt = self.model:get_global_transform(lt)
         else
             self.shoot_counter = 2
 
+            local a = self.dir * self.aim * math.pi
+
+            self.muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
+            self.muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
+
+            World:add_hero_bullet(AimShot(self.muzzle_x, self.muzzle_y, a))
+        end
+
+        if self.shoot_counter == 0 then
 
             self.aim = self.aim - self.dir * input.dx * (1/16)
             if self.aim > 1.0 then
@@ -226,40 +262,33 @@ function Hero:update()
                 self.dir = -self.dir
             end
 
-            -- update animation
-            self.anim_manager:play(ANIM_AIM)
-            self.anim_manager:seek(self.aim, 0.3)
-
-            local lt = self.anim_manager:update()
-            self.gt = self.model:get_global_transform(lt)
-
-            self:update_muzzle_pos()
-
-            -- make new aim shot
-            local a = self.dir * self.aim * math.pi
-            World:add_hero_bullet(AimShot(self.muzzle_x, self.muzzle_y, a))
         end
 
+        self.anim_manager:play(ANIM_AIM)
+        self.anim_manager:seek(self.aim, 0.3)
+
     else
-
-        local lt = self.anim_manager:update()
-        self.gt = self.model:get_global_transform(lt)
-
         if shoot and not self.prev_shoot then
-            self:update_muzzle_pos()
-            World:add_hero_bullet(Laser(self.muzzle_x + self.dir * 2, self.muzzle_y, self.dir))
+            self.muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
+            self.muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
+            if is_crouching then
+                self.muzzle_y = self.muzzle_y + 6.5
+            end
+            World:add_hero_bullet(Laser(self.muzzle_x, self.muzzle_y, self.dir))
         end
     end
 
+    local lt = self.anim_manager:update()
+    self.gt = self.model:get_global_transform(lt)
+
+
     self.prev_jump  = jump
     self.prev_shoot = shoot
-
 end
 
 function Hero:draw()
     -- G.setColor(1, 1, 1, 0.1)
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-
 
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())
@@ -267,7 +296,6 @@ function Hero:draw()
     G.scale(MODEL_SCALE)
     self.model:draw(self.gt)
     G.pop()
-
 
 end
 

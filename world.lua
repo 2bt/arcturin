@@ -123,17 +123,15 @@ end
 function World:update()
 
     update_all(self.solids)
-    update_all(self.particles)
-
-    update_all(self.hero_bullets)
-    update_all(self.enemy_bullets)
-
     for _, h in ipairs(self.heroes) do h:update() end
     update_all(self.enemies)
+    update_all(self.hero_bullets)
+    update_all(self.enemy_bullets)
+    update_all(self.particles)
 
-    local hero = self.heroes[1]
 
     -- update camera
+    local hero = self.heroes[1]
     local cx, cy = self.camera:get_center()
     local x, y = hero.box:get_center()
     local pad_x = W / 8
