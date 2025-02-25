@@ -1,7 +1,5 @@
 # next steps
 
-+ crouch
-
 + enemies
   + ufo
   + walker

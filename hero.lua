@@ -124,7 +124,7 @@ end
 
 
 function Hero:init(input, x, y)
-    self.box          = Box.make_above(x, y, 12, 22)
+    self.box          = Box.make_above(x, y, 11, 23)
     self.vy           = 0
     self.vx           = 0
     self.dir          = 1
@@ -159,6 +159,11 @@ function Hero:update()
     local jump  = input.a
     local shoot = input.b
 
+    if self.prev_is_crouching then
+        self.box.y = self.box.y - 6.5
+        self.box.h = self.box.h + 6.5
+    end
+    local is_crouching = false
 
     -- aiming
     if not self.in_air and self.vx == 0 and shoot then
@@ -178,7 +183,6 @@ function Hero:update()
         self.aim         = 0.5
     end
 
-    local is_crouching = false
 
     if not self.is_aiming then
 
@@ -281,9 +285,14 @@ function Hero:update()
     local lt = self.anim_manager:update()
     self.gt = self.model:get_global_transform(lt)
 
+    if is_crouching then
+        self.box.y = self.box.y + 6.5
+        self.box.h = self.box.h - 6.5
+    end
 
     self.prev_jump  = jump
     self.prev_shoot = shoot
+    self.prev_is_crouching = is_crouching
 end
 
 function Hero:draw()
