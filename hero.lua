@@ -49,20 +49,30 @@ function HeroBullet:update()
     local s = World:move_x(self.box, self.vx)
     local t = World:move_y(self.box, self.vy)
     s = s or t
-
     self.box.x = x
     self.box.y = y
 
+    -- enemy collision
+    for _, e in ipairs(World.enemies) do
+        if self.box:overlaps(e.box) then
+            e:hit(self.power)
+            self.hit = true
+        end
+    end
+
+    -- solid collision
     if s then
         local p = self.power
-        if s.shield then p = math.min(p, s.shield) end
+        if s.hp then p = math.min(p, s.hp) end
         s:hit(p)
 
         self.power = self.power - p
         if self.power <= 0 then
             self.hit = true
+            return
         end
     end
+
 end
 
 local Laser = HeroBullet:new()

@@ -3,6 +3,7 @@ MAX_VY    = 3
 TILE_SIZE = 8
 
 
+local ACTIVE_AREA_PADDING = 8
 
 World = {}
 function World:init()
@@ -14,6 +15,7 @@ function World:init()
     self.particles     = {}
 
     self.camera = Box(0, 0, W, H)
+    self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
 
     -- loading the map will fill up actors and solids
     self.map = Map("assets/map.json")
@@ -99,9 +101,7 @@ local function update_all(t)
     -- update / delete actors
     local j = 1
     for i, e in ipairs(t) do
-        if e.alive then
-            e:update()
-        end
+        if e.alive then e:update() end
         if e.alive then
             t[j] = e
             j = j + 1
@@ -113,23 +113,11 @@ local function update_all(t)
 end
 local function draw_all(t)
     for _, e in ipairs(t) do
-        if e.alive then
-            e:draw()
-        end
+        if e.alive then e:draw() end
     end
 end
 
-
-function World:update()
-
-    update_all(self.solids)
-    for _, h in ipairs(self.heroes) do h:update() end
-    update_all(self.enemies)
-    update_all(self.hero_bullets)
-    update_all(self.enemy_bullets)
-    update_all(self.particles)
-
-
+function World:update_camera()
     -- update camera
     local hero = self.heroes[1]
     local cx, cy = self.camera:get_center()
@@ -140,6 +128,20 @@ function World:update()
     cy = clamp(cy, y - pad_y, y + pad_y)
     self.camera:set_center(cx, cy)
 
+    -- for activating enemies
+    self.active_area.x = self.camera.x - ACTIVE_AREA_PADDING
+    self.active_area.y = self.camera.y - ACTIVE_AREA_PADDING
+end
+function World:update()
+
+    update_all(self.solids)
+    for _, h in ipairs(self.heroes) do h:update() end
+    self:update_camera()
+
+    update_all(self.enemies)
+    update_all(self.hero_bullets)
+    update_all(self.enemy_bullets)
+    update_all(self.particles)
 end
 function World:draw()
     G.translate(-self.camera.x, -self.camera.y)
