@@ -23,7 +23,7 @@ function Crate:hit(amount)
 
         -- TODO: explode
         for i = 1, 10 do
-            World:add_actor(CrateParticle(
+            World:add_particle(CrateParticle(
                 self.box:center_x() + love.math.random(-4, 4),
                 self.box:center_y() + love.math.random(-4, 4)))
         end

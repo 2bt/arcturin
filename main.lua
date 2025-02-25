@@ -4,9 +4,11 @@ require("input")
 require("model")
 require("animation_manager")
 
-require("actor")
 require("solid")
+
+require("particle")
 require("hero")
+require("enemy")
 
 require("map")
 require("world")

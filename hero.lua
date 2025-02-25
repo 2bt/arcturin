@@ -1,5 +1,3 @@
-MAX_VY = 3
-
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.15
@@ -12,88 +10,75 @@ local ANIM_AIM    = 3
 local ANIM_JUMP   = 4
 
 
-local HeroBullet = Actor:new()
-function HeroBullet:init(x, y, dir)
-    self.box    = Box(x - 5, y - 2, 10, 4)
-    self.dir    = dir
-    self.hit    = false
-    self.energy = 5
-end
+local HeroBullet = Object:new({
+    alive = true,
+    hit   = false,
+    power = 1,
+    vx    = 0,
+    vy    = 0,
+})
 function HeroBullet:update()
-    if self.hit then
-        self.alive = false
-        return
-    end
-
     -- check if still on screen
     if not self.box:overlaps(World.camera) then
         self.alive = false
         return
     end
 
-    local s = World:move_x(self, self.dir * 5)
-    if s then
+    if self.hit then
+        self.alive = false
+        return
+    end
 
-        local e = self.energy
-        if s.shield then e = math.min(e, s.shield) end
-        s:hit(e)
-
-        self.energy = self.energy - e
-        if self.energy <= 0 then
-            self.hit = true
+    if self.ttl then
+        self.ttl = self.ttl - 1
+        if self.ttl < 0 then
+            self.alive = false
+            return
         end
     end
-end
-function HeroBullet:draw()
-    G.setColor(0.9, 1, 1, 0.8)
-    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
-end
 
+    local x = self.box.x + self.vx
+    local y = self.box.y + self.vy
 
-
-local AIM_SHOT_SIZE = 5
-local AimShot = Actor:new()
-function AimShot:init(x, y, a)
-    self.box = Box(x - AIM_SHOT_SIZE/2, y - AIM_SHOT_SIZE/2, AIM_SHOT_SIZE, AIM_SHOT_SIZE)
-    self.a   = a
-    self.ttl = 15
-    self.hit = false
-end
-function AimShot:update()
-    if self.hit then
-        self.alive = false
-        return
-    end
-    -- check if still on screen
-    if not self.box:overlaps(World.camera) then
-        self.alive = false
-        return
-    end
-
-    self.ttl = self.ttl - 1
-    if self.ttl < 0 then
-        self.alive = false
-        return
-    end
-
-    local dx = math.sin(self.a) * 4
-    local dy = math.cos(self.a) * 4
-
-    local x = self.box.x + dx
-    local y = self.box.y + dy
-
-    local s = World:move_x(self, dx)
-    local t = World:move_y(self, dy)
+    local s = World:move_x(self.box, self.vx)
+    local t = World:move_y(self.box, self.vy)
     s = s or t
 
     self.box.x = x
     self.box.y = y
 
     if s then
-        s:hit(1)
-        self.hit = true
-    end
+        local p = self.power
+        if s.shield then p = math.min(p, s.shield) end
+        s:hit(p)
 
+        self.power = self.power - p
+        if self.power <= 0 then
+            self.hit = true
+        end
+    end
+end
+
+local Laser = HeroBullet:new()
+function Laser:init(x, y, dir)
+    self.box   = Box.make_centered(x, y, 10, 4)
+    self.vx    = dir * 5
+    self.power = 5
+end
+function Laser:draw()
+    G.setColor(0.9, 1, 1, 0.8)
+    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
+end
+
+
+
+local AimShot = HeroBullet:new()
+function AimShot:init(x, y, a)
+    self.box = Box.make_centered(x, y, 5, 5)
+    self.vx  = math.sin(a) * 4
+    self.vy  = math.cos(a) * 4
+    self.a   = a
+    self.ttl = 16
 end
 function AimShot:draw()
     G.setColor(1, 1, 0.9, 0.8)
@@ -105,7 +90,8 @@ function AimShot:draw()
 end
 
 
-Hero = Actor:new({
+Hero = Object:new({
+    alive = true,
     model = Model("assets/ladus.model"),
 })
 function Hero:init(input, x, y)
@@ -157,13 +143,14 @@ function Hero:update()
                 -- start aiming
                 self.is_aiming = true
                 self.aim       = 0.5 -- neutral position
+                self.anim_manager:play(ANIM_AIM)
+                self.anim_manager:seek(self.aim)
             end
         end
     else
         self.is_aiming   = false
         self.aim_counter = 0
     end
-
 
 
     if not self.is_aiming then
@@ -174,7 +161,7 @@ function Hero:update()
         -- moving
         local acc = self.in_air and ACCEL_AIR or ACCEL_GROUND
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
-        World:move_x(self, self.vx)
+        World:move_x(self.box, self.vx)
 
         -- jumping
         local fall_though = false
@@ -211,7 +198,7 @@ function Hero:update()
     local vy = clamp(self.vy, -MAX_VY, MAX_VY)
 
     self.in_air = true
-    if World:move_y(self, vy) then
+    if World:move_y(self.box, vy) then
         if vy > 0 then
             self.in_air = false
         end
@@ -223,10 +210,13 @@ function Hero:update()
         -- aiming
         if self.shoot_counter > 0 then
             self.shoot_counter = self.shoot_counter - 1
+
+            local lt = self.anim_manager:update()
+            self.gt = self.model:get_global_transform(lt)
         else
             self.shoot_counter = 2
 
-            -- self.aim = self.aim - self.dir * input.dx * 0.02
+
             self.aim = self.aim - self.dir * input.dx * (1/16)
             if self.aim > 1.0 then
                 self.aim = 2 - self.aim
@@ -238,7 +228,8 @@ function Hero:update()
 
             -- update animation
             self.anim_manager:play(ANIM_AIM)
-            self.anim_manager:seek(self.aim)
+            self.anim_manager:seek(self.aim, 0.3)
+
             local lt = self.anim_manager:update()
             self.gt = self.model:get_global_transform(lt)
 
@@ -246,7 +237,7 @@ function Hero:update()
 
             -- make new aim shot
             local a = self.dir * self.aim * math.pi
-            World:add_actor(AimShot(self.muzzle_x, self.muzzle_y, a))
+            World:add_hero_bullet(AimShot(self.muzzle_x, self.muzzle_y, a))
         end
 
     else
@@ -256,7 +247,7 @@ function Hero:update()
 
         if shoot and not self.prev_shoot then
             self:update_muzzle_pos()
-            World:add_actor(HeroBullet(self.muzzle_x, self.muzzle_y, self.dir))
+            World:add_hero_bullet(Laser(self.muzzle_x + self.dir * 2, self.muzzle_y, self.dir))
         end
     end
 

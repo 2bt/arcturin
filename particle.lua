@@ -1,17 +1,4 @@
-
-Actor = Object:new {
-    alive = true,
-}
-function Actor:update()
-end
-function Actor:draw()
-    G.setColor(1, 1, 1, 0.5)
-    G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-end
-
-
-
-CrateParticle = Actor:new()
+CrateParticle = Object:new({ alive = true })
 function CrateParticle:init(x, y)
     self.box = Box(x-1, y-1, 2, 2)
     self.vx = love.math.random() * 3 - 1.5
@@ -26,10 +13,10 @@ function CrateParticle:update()
         return
     end
     self.vy = clamp(self.vy + GRAVITY, -MAX_VY, MAX_VY)
-    if World:move_x(self, self.vx) then
+    if World:move_x(self.box, self.vx) then
         self.vx = self.vx * -1
     end
-    if World:move_y(self, self.vy) then
+    if World:move_y(self.box, self.vy) then
         self.vy = self.vy * -love.math.random()
     end
 end

@@ -8,6 +8,9 @@ end
 function Box.make_above(x, y, w, h)
     return Box(x - w / 2, y - h, w, h)
 end
+function Box.make_centered(x, y, w, h)
+    return Box(x - w / 2, y - h / 2, w, h)
+end
 
 function Box:get_center()
     return self.x + self.w / 2, self.y + self.h / 2

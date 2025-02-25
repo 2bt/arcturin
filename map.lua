@@ -14,9 +14,13 @@ function Map:init(name)
         if layer.type == "objectgroup" then
             if layer.name == "objects" then
                 for _, o in ipairs(layer.objects) do
+                    local x = o.x + o.width / 2
+                    local y = o.y + o.height
                     if o.name == "hero" then
-                        self.hero_x = o.x + o.width / 2
-                        self.hero_y = o.y + o.height
+                        self.hero_x = x
+                        self.hero_y = y
+                    elseif o.name == "ufo" then
+                        World:add_enemy(UfoEnemy(x, y))
                     end
 
                 end
