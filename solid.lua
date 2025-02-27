@@ -38,7 +38,7 @@ function Crate:draw()
     G.setColor(0.19, 0.27, 0.07)
     G.rectangle("fill", self.box.x,     self.box.y,     4, 4, q)
     G.rectangle("fill", self.box.x + 4, self.box.y + 4, 4, 4, q)
-    G.setColor(0.2, 0.3, 0.1)
+    G.setColor(0.2, 0.3, 0.15)
     G.rectangle("fill", self.box.x + 4, self.box.y,     4, 4, q)
     G.rectangle("fill", self.box.x,     self.box.y + 4, 4, 4, q)
 end

@@ -113,7 +113,7 @@ local function update_all(t)
 end
 local function draw_all(t)
     for _, e in ipairs(t) do
-        if e.alive then e:draw() end
+        if e.alive and e.box:overlaps(World.active_area) then e:draw() end
     end
 end
 
@@ -144,6 +144,7 @@ function World:update()
     update_all(self.particles)
 end
 function World:draw()
+    G.push()
     G.translate(-self.camera.x, -self.camera.y)
 
     self.map:draw()
@@ -156,5 +157,15 @@ function World:draw()
 
     draw_all(self.heroes)
     draw_all(self.enemies)
+
+    G.pop()
+
+    -- HUD
+    for i, h in ipairs(self.heroes) do
+        G.setColor(0.5, 0.5, 0.5, 0.5)
+        G.rectangle("fill", 4, i * 8 - 4, 12 * 4, 4)
+        G.setColor(0.5, 0.8, 0.3, 0.5)
+        G.rectangle("fill", 4, i * 8 - 4, h.hp * 4, 4)
+    end
 
 end

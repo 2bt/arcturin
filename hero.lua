@@ -134,34 +134,34 @@ end
 
 
 function Hero:init(input, x, y)
-    self.box          = Box.make_above(x, y, 11, 23)
-    self.vy           = 0
-    self.vx           = 0
-    self.dir          = 1
+    self.input = input
+    input.hero = self
+
+    self.box = Box.make_above(x, y, 11, 23)
+    self.vy  = 0
+    self.vx  = 0
+    self.dir = 1
+    self.hp  = 12
 
     self.is_crouching = false
-
     self.is_aiming    = false
+    self.in_air       = true
+
     self.aim          = 0.5
     self.aim_counter  = 0
-
-    self.in_air       = true
     self.jump_control = false
 
     self.prev_jump     = false
-    self.prev_shoot    = false
     self.shoot_counter = 0
+    self.prev_shoot    = false
 
     self.muzzle_x      = 0
     self.muzzle_y      = 0
 
+    self.invincible_counter = 0
 
     self.anim_manager = AnimationManager(self.model)
-    self.anim_manager:play(ANIM_IDLE)
-
-    self.input = input
-    input.hero = self
-
+    self.anim_manager:play(ANIM_IDLE, 0)
 end
 
 function Hero:update()
@@ -303,11 +303,33 @@ function Hero:update()
     self.prev_jump  = jump
     self.prev_shoot = shoot
     self.prev_is_crouching = is_crouching
+
+
+
+    if self.invincible_counter > 0 then
+        self.invincible_counter = self.invincible_counter - 1
+        return
+    end
+
+    -- enemy collision
+    for _, e in ipairs(World.enemies) do
+        if self.box:overlaps(e.box) then
+            self.hp = math.max(0, self.hp - 1)
+            self.invincible_counter = 60
+            -- knockback
+            self.vy = -2
+            local dir = self.box:center_x() > e.box:center_x() and 1 or -1
+            self.vx = dir * 3
+
+        end
+    end
 end
 
 function Hero:draw()
     -- G.setColor(1, 1, 1, 0.1)
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+
+    if self.invincible_counter % 2 == 1 then return end
 
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())

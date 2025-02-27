@@ -15,7 +15,23 @@ function Model:init(file_name)
     local str = io.open(file_name):read("*a")
     local data = loadstring("return " .. str)()
     self.anims = data.anims
-    self.polys = data.polys
+    self.polys = {}
+    for _, p in ipairs(data.polys) do
+        if love.math.isConvex(p.data) then
+            table.insert(self.polys, p)
+        else
+            -- split up non-convex polygons
+            local tris = love.math.triangulate(p.data)
+            for _, t in ipairs(tris) do
+                table.insert(self.polys, {
+                    bone = p.bone,
+                    color = p.color,
+                    shade = p.shade,
+                    data = t,
+                })
+            end
+        end
+    end
     self.bones = {}
     for i, d in ipairs(data.bones) do
         table.insert(self.bones, Bone(i, d.keyframes))
@@ -84,36 +100,6 @@ function Model:get_global_transform(local_transform)
     return gt
 end
 
--- drawing
-local function draw_concav_poly(p)
-    if #p < 6 then return end
-    local status, err = pcall(function()
-        local tris = love.math.triangulate(p)
-        for _, t in ipairs(tris) do G.polygon("fill", t) end
-    end)
-    if not status then
-        print(err)
-    end
-end
-
-local COLORS = {
-    { 0, 0, 0 },
-    { 1, 1, 1 },
-    { 0.41, 0.22, 0.17 },
-    { 0.44, 0.64, 0.7 },
-    { 0.44, 0.24, 0.53 },
-    { 0.35, 0.55, 0.26 },
-    { 0.21, 0.16, 0.47 },
-    { 0.72, 0.78, 0.44 },
-    { 0.44, 0.31, 0.15 },
-    { 0.26, 0.22, 0 },
-    { 0.6, 0.4, 0.35 },
-    { 0.27, 0.27, 0.27 },
-    { 0.42, 0.42, 0.42 },
-    { 0.6, 0.82, 0.52 },
-    { 0.42, 0.37, 0.71 },
-    { 0.58, 0.58, 0.58 },
-}
 function Model:draw(global_transform)
     for i, p in ipairs(self.polys) do
         G.push()
@@ -123,8 +109,7 @@ function Model:draw(global_transform)
         local c = COLORS[p.color]
         local s = p.shade
         G.setColor(c[1] * s, c[2] * s, c[3] * s)
-        -- G.polygon("fill", p.data)
-        draw_concav_poly(p.data)
+        G.polygon("fill", p.data)
         G.pop()
     end
 end

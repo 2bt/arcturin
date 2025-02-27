@@ -1,9 +1,9 @@
 CrateParticle = Object:new({ alive = true })
 function CrateParticle:init(x, y)
-    self.box = Box(x-1, y-1, 2, 2)
-    self.vx = love.math.random() * 3 - 1.5
-    self.vy = love.math.random() * 3 - 2
-    self.ttl = 5 + love.math.random(20)
+    self.box   = Box(x-1, y-1, 2, 2)
+    self.vx    = love.math.random() * 3 - 1.5
+    self.vy    = love.math.random() * 3 - 2
+    self.ttl   = 5 + love.math.random(20)
     self.taint = love.math.random(1, 2)
 end
 function CrateParticle:update()
@@ -25,7 +25,7 @@ function CrateParticle:draw()
     if self.taint == 1 then
         G.setColor(0.19, 0.27, 0.07, a)
     else
-        G.setColor(0.2, 0.3, 0.1, a)
+        G.setColor(0.2, 0.3, 0.15, a)
     end
     G.circle("fill", self.box:center_x(), self.box:center_y(), 1)
 end

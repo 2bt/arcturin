@@ -1,5 +1,7 @@
 # next steps
 
++ dying
+
 + enemies
   + ufo
   + walker
@@ -7,7 +9,6 @@
   + turret
   + dragon
 
-+ dying
 + level completion
 + level transition
 + game menu
