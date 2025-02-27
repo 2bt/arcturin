@@ -150,13 +150,14 @@ function World:draw()
     self.map:draw()
 
     draw_all(self.solids)
-    draw_all(self.particles)
 
     draw_all(self.hero_bullets)
     draw_all(self.enemy_bullets)
 
     draw_all(self.heroes)
     draw_all(self.enemies)
+
+    draw_all(self.particles)
 
     G.pop()
 

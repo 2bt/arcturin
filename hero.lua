@@ -12,9 +12,12 @@ local ANIM_AIM    = 4
 local ANIM_JUMP   = 5
 
 
+
+
 local HeroBullet = Object:new({
     alive = true,
-    hit   = false,
+    first_update = true,
+    -- attributes
     power = 1,
     vx    = 0,
     vy    = 0,
@@ -23,18 +26,23 @@ function HeroBullet:move_back()
     self.box.x = self.box.x - self.vx
     self.box.y = self.box.y - self.vy
 end
+function HeroBullet:spark(nx, ny)
+    self.alive = false
+    local cx = self.box:center_x() + nx * self.box.w / 2
+    local cy = self.box:center_y() + ny * self.box.h / 2
+    World:add_particle(FlashParticle(cx, cy))
+    for _ = 1, 5 do
+        local x = cx + randf(-ny, ny) * 4
+        local y = cy + randf(-nx, nx) * 4
+        World:add_particle(SparkParticle(x, y))
+    end
+end
 function HeroBullet:update()
     -- check if still on screen
     if not self.box:overlaps(World.camera) then
         self.alive = false
         return
     end
-
-    if self.hit then
-        self.alive = false
-        return
-    end
-
     if self.ttl then
         self.ttl = self.ttl - 1
         if self.ttl < 0 then
@@ -43,20 +51,37 @@ function HeroBullet:update()
         end
     end
 
-    local x = self.box.x + self.vx
-    local y = self.box.y + self.vy
+    -- move bullet back in first update
+    local steps = 1
+    if self.first_update then
+        self.first_update = false
+        local steps = 3
+        self.box.x = self.box.x - self.vx * 2
+        self.box.y = self.box.y - self.vy * 2
+    end
+    local sx, sy, s
+    for _ = 1, steps do
+        sx = World:move_x(self.box, self.vx)
+        sy = World:move_y(self.box, self.vy)
+        s = sx or sy
+        if s then break end
+    end
 
-    local s = World:move_x(self.box, self.vx)
-    local t = World:move_y(self.box, self.vy)
-    s = s or t
-    self.box.x = x
-    self.box.y = y
+    local nx = 0
+    local ny = 0
+    if sx then
+        nx = self.vx > 0 and 1 or -1
+    elseif sy then
+        ny = self.vy > 0 and 1 or -1
+    end
+
 
     -- enemy collision
     for _, e in ipairs(World.enemies) do
         if self.box:overlaps(e.box) then
             e:hit(self.power)
-            self.hit = true
+            self:spark(0, 0)
+            return
         end
     end
 
@@ -68,11 +93,9 @@ function HeroBullet:update()
 
         self.power = self.power - p
         if self.power <= 0 then
-            self.hit = true
-            return
+            self:spark(nx, ny)
         end
     end
-
 end
 
 local Laser = HeroBullet:new()
@@ -80,7 +103,6 @@ function Laser:init(x, y, dir)
     self.box   = Box.make_centered(x, y, 10, 4)
     self.vx    = dir * 5
     self.power = 5
-    self:move_back()
 end
 function Laser:draw()
     G.setColor(0.9, 1, 1, 0.8)
@@ -96,7 +118,6 @@ function AimShot:init(x, y, a)
     self.vy  = math.cos(a) * 4
     self.a   = a
     self.ttl = 16
-    self:move_back()
 end
 function AimShot:draw()
     G.setColor(1, 1, 0.9, 0.8)

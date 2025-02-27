@@ -1,10 +1,14 @@
 # next steps
 
++ explosions
 + dying
 
 + enemies
   + ufo
+  + frog
   + walker
+  + fly
+  + spider
   + tank
   + turret
   + dragon

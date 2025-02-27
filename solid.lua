@@ -20,9 +20,7 @@ function Crate:hit(power)
     self.hp = self.hp - power
     if self.hp <= 0 then
         self.alive = false
-
-        -- TODO: explode
-        for i = 1, 10 do
+        for i = 1, 20 do
             World:add_particle(CrateParticle(
                 self.box:center_x() + love.math.random(-4, 4),
                 self.box:center_y() + love.math.random(-4, 4)))
@@ -30,7 +28,6 @@ function Crate:hit(power)
     end
 end
 function Crate:update()
-
 end
 function Crate:draw()
 
