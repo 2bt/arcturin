@@ -126,6 +126,12 @@ function World:update_camera()
     local pad_y = H / 8
     cx = clamp(cx, x - pad_x, x + pad_x)
     cy = clamp(cy, y - pad_y, y + pad_y)
+
+    -- don't go outside of map
+    cx = clamp(cx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
+    cy = clamp(cy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
+
+
     self.camera:set_center(cx, cy)
 
     -- for activating enemies

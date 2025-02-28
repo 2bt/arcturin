@@ -29,7 +29,7 @@ function SparkParticle:init(x, y)
     self.box = Box(x-1, y-1, 2, 2)
     self.vx  = randf(-3, 3)
     self.vy  = randf(-3, 3)
-    self.ttl = 3 + love.math.random(4)
+    self.ttl = 2 + love.math.random(4)
 end
 function SparkParticle:update()
     self.ttl = self.ttl - 1

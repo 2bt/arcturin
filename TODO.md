@@ -2,6 +2,7 @@
 
 + explosions
 + dying
++ generate wall mesh
 
 + enemies
   + ufo

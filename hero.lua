@@ -47,6 +47,11 @@ function HeroBullet:update()
         self.ttl = self.ttl - 1
         if self.ttl < 0 then
             self.alive = false
+            local x = self.box:center_x() + self.vx * 0.5
+            local y = self.box:center_y() + self.vy * 0.5
+            for _ = 1, 5 do
+                World:add_particle(SparkParticle(x, y))
+            end
             return
         end
     end
