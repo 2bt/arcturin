@@ -53,6 +53,7 @@ end
 
 function Game:draw()
     G.clear(0, 0, 0)
+    -- G.clear(0.1, 0.15, 0.5)
 
     World:draw()
 

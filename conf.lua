@@ -7,5 +7,5 @@ function love.conf(t)
     t.window.msaa      = 4
 
     -- XXX
-    t.window.display   = 2
+    t.window.display = 2
 end

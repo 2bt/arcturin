@@ -153,7 +153,6 @@ function World:draw()
     G.push()
     G.translate(-self.camera.x, -self.camera.y)
 
-    self.map:draw()
 
     draw_all(self.solids)
 
@@ -162,6 +161,9 @@ function World:draw()
 
     draw_all(self.heroes)
     draw_all(self.enemies)
+
+
+    self.map:draw()
 
     draw_all(self.particles)
 
