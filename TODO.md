@@ -2,12 +2,11 @@
 
 + explosions
 + dying
-+ generate wall mesh
 
 + enemies
   + ufo
-  + frog
   + walker
+  + frog
   + fly
   + spider
   + tank

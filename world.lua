@@ -118,8 +118,8 @@ local function draw_all(t)
 end
 
 function World:update_camera()
-    -- update camera
-    local hero = self.heroes[1]
+    local hero = self.heroes[#self.heroes]
+
     local cx, cy = self.camera:get_center()
     local x, y = hero.box:get_center()
     local pad_x = W / 8
@@ -162,10 +162,11 @@ function World:draw()
     draw_all(self.heroes)
     draw_all(self.enemies)
 
-
     self.map:draw()
 
-    draw_all(self.particles)
+    for _, e in ipairs(self.particles) do
+        if e.alive then e:draw() end
+    end
 
     G.pop()
 

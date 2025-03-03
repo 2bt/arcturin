@@ -36,6 +36,7 @@ function HeroBullet:spark(nx, ny)
         local y = cy + randf(-nx, nx) * 4
         World:add_particle(SparkParticle(x, y))
     end
+    -- make_explosion(self.box:get_center())
 end
 function HeroBullet:update()
     -- check if still on screen
@@ -60,7 +61,7 @@ function HeroBullet:update()
     local steps = 1
     if self.first_update then
         self.first_update = false
-        local steps = 3
+        steps = 2
         self.box.x = self.box.x - self.vx * 2
         self.box.y = self.box.y - self.vy * 2
     end
@@ -136,7 +137,7 @@ end
 
 Hero = Object:new({
     alive = true,
-    model = Model("assets/ladus.model"),
+    model = Model("assets/hero.model"),
 })
 do
     -- precalculate aim offsets
@@ -156,9 +157,6 @@ do
     end
     Hero.aim_offset = { x = ox, y = oy }
 end
-
-
-
 function Hero:init(input, x, y)
     self.input = input
     input.hero = self
@@ -171,7 +169,7 @@ function Hero:init(input, x, y)
 
     self.is_crouching = false
     self.is_aiming    = false
-    self.in_air       = true
+    self.in_air       = false
 
     self.aim          = 0.5
     self.aim_counter  = 0

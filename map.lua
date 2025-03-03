@@ -1,6 +1,10 @@
 local json = require("dkjson")
 require("meshgen")
 
+local ENEMY_MAP = {
+    ["ufo"]    = UfoEnemy,
+    ["walker"] = WalkerEnemy,
+}
 
 Map = Object:new()
 function Map:init(name)
@@ -21,10 +25,11 @@ function Map:init(name)
                     if o.name == "hero" then
                         self.hero_x = x
                         self.hero_y = y
-                    elseif o.name == "ufo" then
-                        World:add_enemy(UfoEnemy(x, y))
+                    elseif ENEMY_MAP[o.name] then
+                        World:add_enemy(ENEMY_MAP[o.name](x, y))
+                    else
+                        error("unknown object")
                     end
-
                 end
             end
         elseif layer.type == "tilelayer" then
@@ -78,25 +83,6 @@ function Map:collision(box, axis)
     return overlap
 end
 function Map:draw()
-    -- local cam = World.camera
-    -- local x1 = math.floor(cam.x / TILE_SIZE)
-    -- local x2 = math.floor(cam:right() / TILE_SIZE)
-    -- local y1 = math.floor(cam.y / TILE_SIZE)
-    -- local y2 = math.floor(cam:bottom() / TILE_SIZE)
-    -- G.setColor(0.1, 0.1, 0.2)
-    -- for x = x1, x2 do
-    --     for y = y1, y2 do
-    --         local t = self:tile_at(x, y)
-    --         if t == 1 then
-    --             G.rectangle("fill",
-    --                 x * TILE_SIZE,
-    --                 y * TILE_SIZE,
-    --                 TILE_SIZE,
-    --                 TILE_SIZE)
-    --         end
-    --     end
-    -- end
-
     G.setColor(1, 1, 1)
     G.draw(self.mesh)
 end

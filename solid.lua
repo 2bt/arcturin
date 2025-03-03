@@ -31,7 +31,7 @@ function Crate:update()
 end
 function Crate:draw()
 
-    local q = 3 - self.hp
+    local q = self.hp > 1 and 1 or 3
     G.setColor(0.19, 0.27, 0.07)
     G.rectangle("fill", self.box.x,     self.box.y,     4, 4, q)
     G.rectangle("fill", self.box.x + 4, self.box.y + 4, 4, 4, q)

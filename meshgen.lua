@@ -33,6 +33,12 @@ function MeshMaker:make_mesh()
 end
 
 
+-- color helper
+local function color_scale(v, r, g, b)
+    return v*r, v*g, v*b
+end
+
+
 
 -- vector helper functions
 local function dot(a, b)
@@ -170,17 +176,15 @@ local noise = love.math.noise
 
 
 local function voronoi(map, dist, x, y)
+    local pad = 8
     local poly = {
-        { x * 8 -  4, y * 8 -  4 },
-        { x * 8 + 12, y * 8 -  4 },
-        { x * 8 + 12, y * 8 + 12 },
-        { x * 8 -  4, y * 8 + 12 },
+        { x * 8 - pad,     y * 8 - pad },
+        { x * 8 + 8 + pad, y * 8 - pad },
+        { x * 8 + 8 + pad, y * 8 + 8 + pad },
+        { x * 8 - pad,     y * 8 + 8 + pad },
     }
 
     local function point(x, y)
-        if map:tile_at(x, y) ~= 1 then
-            return { x * 8 + 4, y * 8 + 4 }
-        end
         local f = 9.321
         return {
             x * 8 + mix(-3, 11, noise(x * f, y * f, 1.234)),
@@ -191,17 +195,13 @@ local function voronoi(map, dist, x, y)
 
     local c = point(x, y)
 
-    local gap = 0.6
-    local d = dist[x + y * map.w + 1] or 0
-    if d > randf(1, 10) then
-        gap = 1.2
-    end
+    local distance = dist[x + y * map.w + 1] or 0
 
     for oy = -1, 1 do
         for ox = -1, 1 do
             if ox ~= 0 or oy ~= 0 then
 
-                -- outer wall
+                -- keep outer wall more regular
                 if map:tile_at(x + ox, y + oy) ~= 1 then
                     local p = {
                         x * 8 + 4 + 4 * ox,
@@ -214,10 +214,23 @@ local function voronoi(map, dist, x, y)
                     poly = clip_polygon(poly, p, n)
 
                 else
-                    local p = point(x + ox, y + oy)
+
+                    local qx = x + ox * 0.5
+                    local qy = y + oy * 0.5
+                    local q = noise(qx * 11.345, qy * 11.345)
+                    local ratio = mix(0.1, 0.9, q)
+
+                    if ox > 0 or (ox == 0 and oy > 0) then ratio = 1 - ratio end
+                    local gap = 0.6
+                    if distance > randf(0, 15) then
+                        gap = gap * 2
+                    end
+
+
+                    local p  = point(x + ox, y + oy)
                     local pc = sub(c, p)
-                    local n = normalize(pc)
-                    local m = add(p, scale(n, length(pc) * 0.5 + gap))
+                    local n  = normalize(pc)
+                    local m  = add(p, scale(n, length(pc) * ratio + gap))
                     poly = clip_polygon(poly, m, n)
                 end
             end
@@ -237,17 +250,36 @@ function generate_map_mesh(map)
     love.math.setRandomSeed(1337)
     local mm = MeshMaker()
 
+    -- background
+    mm:color(0.03, 0.03, 0.03)
+    for r = 0, map.h - 1 do
+        for c = 0, map.w - 1 do
+            if map:tile_at(c, r) == 1 then
+                local x = c * 8
+                local y = r * 8
+                local w = 8
+                local h = 8
+                local pad = 1
+                if map:tile_at(c - 1, r) == 0 then
+                    x = x + pad
+                    w = w - pad
+                end
+                if map:tile_at(c + 1, r) == 0 then
+                    w = w - pad
+                end
+                if map:tile_at(c, r - 1) == 0 then
+                    y = y + pad
+                    h = h - pad
+                end
+                if map:tile_at(c, r + 1) == 0 then
+                    h = h - pad
+                end
+                mm:rectangle(x, y, w, h)
+            end
+        end
+    end
 
-    -- mm:color(0.15, 0.12, 0.18)
-    -- for y = 0, self.h - 1 do
-    --     for x = 0, self.w - 1 do
-    --         if self:tile_at(x, y) == 1 then
-    --             mm:rectangle(x * 8, y * 8, 8, 8)
-    --         end
-    --     end
-    -- end
     -- mm:color(0.2, 0.2, 0.3)
-
     -- local function noise_x(x, y)
     --     return x * 8 + mix(-3, 3, noise(x*1.03, y*1.03, 0.0))
     -- end
@@ -287,20 +319,19 @@ function generate_map_mesh(map)
             if map:tile_at(x, y) == 1 then
 
                 local d = dist[x + y * map.w + 1]
-                local f = 1
+                local r = randf(0.9, d)
+                local f =  r < 1 and 0.7
+                        or r < 3 and 0.4
+                        or           0.15
 
-                if d^-2 < randf(0, 1) then
-                    f = 0.5
-                end
-                if d^-1 < randf(0, 0.4) then
-                    f = 0.1
-                end
+                local r = randf(0, 10)
+                local i = r < 4 and 3 or 9
+                mm:color(color_scale(f, unpack(COLORS[i])))
 
-                local q = randf(0.2, 0.25)
-                mm:color(q * f, q * 0.8 * f, 0.2 * f)
 
-                local p = voronoi(map, dist, x, y)
-                mm:polygon(p)
+                local poly = voronoi(map, dist, x, y)
+                if #poly > 6 then mm:polygon(poly) end
+
             end
         end
     end
