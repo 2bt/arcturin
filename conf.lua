@@ -1,6 +1,6 @@
 local F = 5
 function love.conf(t)
-    t.window.title     = "Ladus"
+    t.window.title     = "Arcturin"
     t.window.width     = 320 * F
     t.window.height    = 180 * F
     t.window.resizable = true

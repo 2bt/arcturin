@@ -23,8 +23,9 @@ end
 
 
 function World:add_hero(input)
-    local hero = Hero(input, self.map.hero_x, self.map.hero_y)
-    table.insert(self.heroes, hero)
+    local index = #self.heroes + 1
+    local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
+    self.heroes[index] = hero
 
     self.camera:set_center(hero.box:get_center())
 end

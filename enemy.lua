@@ -61,9 +61,6 @@ function UfoEnemy:sub_update()
 
 end
 function UfoEnemy:draw()
-    -- G.setColor(1, 1, 1, 0.5)
-    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-
     G.setColor(unpack(COLORS[4]))
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
 end
@@ -105,5 +102,5 @@ function WalkerEnemy:sub_update()
 end
 function WalkerEnemy:draw()
     G.setColor(unpack(COLORS[8]))
-    G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
 end

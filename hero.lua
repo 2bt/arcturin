@@ -11,6 +11,7 @@ local ANIM_CROUCH = 3
 local ANIM_AIM    = 4
 local ANIM_JUMP   = 5
 
+local BODY_POLY   = 4
 
 
 
@@ -157,8 +158,9 @@ do
     end
     Hero.aim_offset = { x = ox, y = oy }
 end
-function Hero:init(input, x, y)
+function Hero:init(input, index, x, y)
     self.input = input
+    self.index = index
     input.hero = self
 
     self.box = Box.make_above(x, y, 11, 23)
@@ -354,6 +356,9 @@ function Hero:draw()
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
     if self.invincible_counter % 2 == 1 then return end
+
+    -- give each player a unique body color
+    self.model.polys[BODY_POLY].color = ({ 11, 6, 4, 15 })[self.index] or 11
 
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())
