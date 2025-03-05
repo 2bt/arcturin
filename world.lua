@@ -119,14 +119,18 @@ local function draw_all(t)
 end
 
 function World:update_camera()
-    local hero = self.heroes[#self.heroes]
 
-    local cx, cy = self.camera:get_center()
-    local x, y = hero.box:get_center()
     local pad_x = W / 8
     local pad_y = H / 8
-    cx = clamp(cx, x - pad_x, x + pad_x)
-    cy = clamp(cy, y - pad_y, y + pad_y)
+    local cx, cy = self.camera:get_center()
+
+    local hero = self.heroes[#self.heroes]
+    local hx = hero.box:center_x()
+    local hy = hero.box:bottom() - 12
+
+
+    cx = clamp(cx, hx - pad_x, hx + pad_x)
+    cy = clamp(cy, hy - pad_y, hy + pad_y)
 
     -- don't go outside of map
     cx = clamp(cx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
@@ -152,6 +156,28 @@ function World:update()
 end
 function World:draw()
     G.push()
+
+    -- background
+    if not bg_mesh then
+        bg_mesh = G.newMesh({
+            { 0, 0, 0, 0, 0.0, 0.1, 0.1 },
+            { W, 0, 0, 0, 0.0, 0.1, 0.1 },
+            { W, H, 0, 0, 0.4, 0.2, 0.8 },
+            { 0, H, 0, 0, 0.4, 0.2, 0.8 },
+        })
+        bg_shader = G.newShader([[
+        float gradient_noise(in vec2 uv) {
+            return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
+        }
+        vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
+            return c + gradient_noise(p) * (1.0 / 255.0) - (0.5 / 255.0);
+        }
+        ]])
+    end
+    G.setShader(bg_shader)
+    G.draw(bg_mesh)
+    G.setShader()
+
     G.translate(-self.camera.x, -self.camera.y)
 
 
