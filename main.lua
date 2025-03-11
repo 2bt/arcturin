@@ -1,3 +1,7 @@
+G = love.graphics
+W = 320
+H = 180
+
 require("helper")
 require("box")
 require("input")
@@ -5,23 +9,20 @@ require("model")
 require("animation_manager")
 
 require("solid")
-
 require("particle")
 require("hero")
 require("enemy")
-
 require("map")
 require("world")
+require("title")
 require("game")
 
-G = love.graphics
-W = 320
-H = 180
-G.setFont(G.newFont(14))
-G.setBackgroundColor(0.2, 0.2, 0.2)
-love.mouse.setVisible(false)
-Game:init()
-
+function love.load()
+    G.setFont(G.newFont(14))
+    G.setBackgroundColor(0.2, 0.2, 0.2)
+    love.mouse.setVisible(false)
+    Game:init()
+end
 
 function love.update()
     Game:update()

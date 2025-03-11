@@ -139,6 +139,9 @@ end
 Hero = Object:new({
     alive = true,
     model = Model("assets/hero.model"),
+    prev_jump = true,
+    prev_shoot = true,
+
 })
 do
     -- precalculate aim offsets
@@ -177,9 +180,7 @@ function Hero:init(input, index, x, y)
     self.aim_counter  = 0
     self.jump_control = false
 
-    self.prev_jump     = false
     self.shoot_counter = 0
-    self.prev_shoot    = false
 
     self.muzzle_x      = 0
     self.muzzle_y      = 0

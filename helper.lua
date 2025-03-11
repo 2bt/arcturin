@@ -82,3 +82,6 @@ function table.tostring(t)
     w(t, "")
     return table.concat(buf)
 end
+function table.append(t, ...)
+    for _, a in ipairs({ ... }) do t[#t+1] = a end
+end

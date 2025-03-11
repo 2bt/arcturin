@@ -159,11 +159,13 @@ function World:draw()
 
     -- background
     if not bg_mesh then
+        local color1 = { 0.05, 0.1, 0.1 }
+        local color2 = { 0.1,  0.2, 0.3 }
         bg_mesh = G.newMesh({
-            { 0, 0, 0, 0, 0.0, 0.1, 0.1 },
-            { W, 0, 0, 0, 0.0, 0.1, 0.1 },
-            { W, H, 0, 0, 0.4, 0.2, 0.8 },
-            { 0, H, 0, 0, 0.4, 0.2, 0.8 },
+            { 0, 0, 0, 0, unpack(color1) },
+            { W, 0, 0, 0, unpack(color1) },
+            { W, H, 0, 0, unpack(color2) },
+            { 0, H, 0, 0, unpack(color2) },
         })
         bg_shader = G.newShader([[
         float gradient_noise(in vec2 uv) {
@@ -175,6 +177,7 @@ function World:draw()
         ]])
     end
     G.setShader(bg_shader)
+    G.setColor(1, 1, 1)
     G.draw(bg_mesh)
     G.setShader()
 

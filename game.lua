@@ -19,8 +19,10 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
+
 Game = {
     inputs = { Keyboard() },
+    state  = "title",
 }
 
 function Game:init()
@@ -38,7 +40,9 @@ function Game:remove_joystick(j)
         end
     end
 end
-
+function Game:change_state(state)
+    self.next_state = state
+end
 function Game:update()
 
     for _, input in ipairs(self.inputs) do
@@ -48,16 +52,29 @@ function Game:update()
         end
     end
 
-    World:update()
+    if self.next_state then
+        self.state = self.next_state
+        self.next_state = nil
+    end
+
+
+    if self.state == "title" then
+        Title:update()
+    elseif self.state == "playing" then
+        World:update()
+    end
+
 end
 
 function Game:draw()
     G.clear(0, 0, 0)
-    -- G.clear(unpack(COLORS[15]))
-    World:draw()
 
-    -- G.reset()
-    -- G.setColor(255, 255, 255)
+    if self.state == "title" then
+        Title:draw()
+    elseif self.state == "playing" then
+        World:draw()
+    end
+
     -- for i, input in ipairs(self.inputs) do
     --     G.print(("%d %d"):format(input.state.dx, input.state.dy), 10, i * 20)
     -- end

@@ -1,14 +1,14 @@
-local MeshMaker = Object:new()
-function MeshMaker:init()
+MeshBuilder = Object:new()
+function MeshBuilder:init()
     self.v = {}
 end
-function MeshMaker:color(r, g, b, a)
+function MeshBuilder:color(r, g, b, a)
     self.r = r
     self.g = g
     self.b = b
     self.a = a or 1
 end
-function MeshMaker:polygon(data)
+function MeshBuilder:polygon(data)
     local triangles = love.math.triangulate(data)
     for _, t in ipairs(triangles) do
         for i = 1, 5, 2 do
@@ -20,7 +20,7 @@ function MeshMaker:polygon(data)
         end
     end
 end
-function MeshMaker:rectangle(x, y, w, h)
+function MeshBuilder:rectangle(x, y, w, h)
     self:polygon({
         x,   y,
         x+w, y,
@@ -28,7 +28,7 @@ function MeshMaker:rectangle(x, y, w, h)
         x,   y+h,
     })
 end
-function MeshMaker:make_mesh()
+function MeshBuilder:build()
     return G.newMesh(self.v, "triangles", "static")
 end
 
@@ -36,28 +36,6 @@ end
 -- color helper
 local function color_scale(v, r, g, b)
     return v*r, v*g, v*b
-end
-
-
-
--- vector helper functions
-local function dot(a, b)
-    return a[1] * b[1] + a[2] * b[2]
-end
-local function add(a, b)
-    return { a[1] + b[1], a[2] + b[2] }
-end
-local function sub(a, b)
-    return { a[1] - b[1], a[2] - b[2] }
-end
-local function scale(v, f)
-    return { v[1] * f, v[2] * f }
-end
-local function length(v)
-    return (v[1]^2 + v[2]^2)^0.5
-end
-local function normalize(v)
-    return scale(v, 1 / length(v))
 end
 
 
@@ -144,6 +122,27 @@ local function get_distances(map)
 end
 
 
+-- vector helper functions
+local function dot(a, b)
+    return a[1] * b[1] + a[2] * b[2]
+end
+local function add(a, b)
+    return { a[1] + b[1], a[2] + b[2] }
+end
+local function sub(a, b)
+    return { a[1] - b[1], a[2] - b[2] }
+end
+local function scale(v, f)
+    return { v[1] * f, v[2] * f }
+end
+local function length(v)
+    return (v[1]^2 + v[2]^2)^0.5
+end
+local function normalize(v)
+    return scale(v, 1 / length(v))
+end
+
+
 local function clip_polygon(poly, mid, normal)
     local new_poly = {}
     local a = poly[#poly]
@@ -192,9 +191,7 @@ local function voronoi(map, dist, x, y)
         }
     end
 
-
     local c = point(x, y)
-
     local distance = dist[x + y * map.w + 1] or 0
 
     for oy = -1, 1 do
@@ -239,8 +236,7 @@ local function voronoi(map, dist, x, y)
 
     local data = {}
     for _, p in ipairs(poly) do
-        table.insert(data, p[1])
-        table.insert(data, p[2])
+        table.append(data, p[1], p[2])
     end
     return data
 end
@@ -248,93 +244,71 @@ end
 
 function generate_map_mesh(map)
     love.math.setRandomSeed(1337)
-    local mm = MeshMaker()
+    local b = MeshBuilder()
 
     -- background
-    mm:color(0.03, 0.03, 0.03)
+    b:color(0.03, 0.03, 0.03)
+    local function add_point(p, c, r)
+        local q1 = map:tile_at(c-1, r-1) == 1
+        local q2 = map:tile_at(c,   r-1) == 1
+        local q3 = map:tile_at(c-1, r)   == 1
+        local q4 = map:tile_at(c,   r)   == 1
+        local x = c * 8
+        local y = r * 8
+        local pad = 0.25
+        if q1 then
+            x = x - pad
+            y = y - pad
+        end
+        if q2 then
+            x = x + pad
+            y = y - pad
+        end
+        if q3 then
+            x = x - pad
+            y = y + pad
+        end
+        if q4 then
+            x = x + pad
+            y = y + pad
+        end
+        p[#p+1] = x + mix(-1, 1, noise(x*0.57, y*0.57, 0.0))
+        p[#p+1] = y + mix(-1, 1, noise(x*0.57, y*0.57, 13.69))
+    end
+
     for r = 0, map.h - 1 do
         for c = 0, map.w - 1 do
             if map:tile_at(c, r) == 1 then
-                local x = c * 8
-                local y = r * 8
-                local w = 8
-                local h = 8
-                local pad = 1
-                if map:tile_at(c - 1, r) == 0 then
-                    x = x + pad
-                    w = w - pad
-                end
-                if map:tile_at(c + 1, r) == 0 then
-                    w = w - pad
-                end
-                if map:tile_at(c, r - 1) == 0 then
-                    y = y + pad
-                    h = h - pad
-                end
-                if map:tile_at(c, r + 1) == 0 then
-                    h = h - pad
-                end
-                mm:rectangle(x, y, w, h)
+                local p = {}
+                add_point(p, c,   r)
+                add_point(p, c+1, r)
+                add_point(p, c+1, r+1)
+                add_point(p, c,   r+1)
+                b:polygon(p)
             end
         end
     end
 
-    -- mm:color(0.2, 0.2, 0.3)
-    -- local function noise_x(x, y)
-    --     return x * 8 + mix(-3, 3, noise(x*1.03, y*1.03, 0.0))
-    -- end
-    -- local function noise_y(x, y)
-    --     return y * 8 + mix(-3, 3, noise(x*1.03, y*1.03, 3.0))
-    -- end
-    -- for y = 0, self.h - 1 do
-    --     for x = 0, self.w - 1 do
-    --         if self:tile_at(x, y) == 1 then
-    --             local c = 0
-    --             for yy = y-1, y+1 do
-    --                 for xx = x-1, x+1 do
-    --                     c = c + (self:tile_at(xx, yy) == 1 and 1 or 0)
-    --                 end
-    --             end
-    --             if c < 9 then
-    --                 mm:color(0.1, 0.1, 0.09)
-    --             else
-    --                 mm:color(0.06, 0.06, 0.02)
-    --             end
-    --             mm:polygon({
-    --                 noise_x(x,   y  ), noise_y(x,   y  ),
-    --                 noise_x(x+1, y  ), noise_y(x+1, y  ),
-    --                 noise_x(x+1, y+1), noise_y(x+1, y+1),
-    --                 noise_x(x,   y+1), noise_y(x,   y+1),
-    --             })
-    --         end
-    --     end
-    -- end
 
+    -- stones
     local dist = get_distances(map)
-
-    mm:color(0.4, 0.3, 0.2)
+    b:color(0.4, 0.3, 0.2)
     for y = 0, map.h - 1 do
         for x = 0, map.w - 1 do
-
             if map:tile_at(x, y) == 1 then
-
                 local d = dist[x + y * map.w + 1]
                 local r = randf(0.9, d)
                 local f =  r < 1 and 0.7
                         or r < 3 and 0.4
                         or           0.15
-
                 local r = randf(0, 10)
                 local i = r < 4 and 3 or 9
-                mm:color(color_scale(f, unpack(COLORS[i])))
-
-
+                b:color(color_scale(f, unpack(COLORS[i])))
                 local poly = voronoi(map, dist, x, y)
-                if #poly > 6 then mm:polygon(poly) end
-
+                if #poly > 6 then b:polygon(poly) end
             end
         end
     end
 
-    return mm:make_mesh()
+    return b:build()
 end
