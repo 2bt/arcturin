@@ -39,6 +39,26 @@ function Turtle:arc(a1, a2, r)
 end
 
 
+local time = 0
+local title_shader = G.newShader([[
+extern float time;
+vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
+
+    float v = sin(time * 0.02 - uv.x / 200.0) * 0.5 + 0.5;
+
+    vec3 c1 = vec3(0.5, 0.5, 0.6);
+    vec3 c2 = vec3(0.2, 0.3, 0.5);
+    vec3 c3 = vec3(0.1, 0.1, 0.3);
+
+    vec3 o = mix(c1, c2, smoothstep(0.0, 10.0, uv.y));
+    o = mix(o, mix(c1, c2, 0.5), v * 0.8);
+
+
+    return vec4(o, 1.0);
+}
+]])
+local title_mesh
+local title_shadow_mesh
 do
     local b1 = MeshBuilder()
     local b2 = MeshBuilder()
@@ -66,8 +86,8 @@ do
         end
     end
 
-    local x = 90
-    local y = 60
+    local x = -80
+    local y = -30
     local t = Turtle()
 
     -- A
@@ -110,14 +130,23 @@ do
     poly(t.data)
 
 
+    for _, v in ipairs(b1.v) do
+        v[3] = v[1]
+        v[4] = v[2]
+    end
+
     title_mesh = b1:build()
     title_shadow_mesh = b2:build()
 
 end
 
 
+
+
 Title = {}
 function Title:update()
+    time = time + 1
+    title_shader:send("time", time)
 
     for _, input in ipairs(Game.inputs) do
         if input.state.a or input.state.start then
@@ -125,17 +154,23 @@ function Title:update()
         end
     end
 end
+
+
+
 function Title:draw()
     G.clear(0, 0, 0)
     G.push()
-    G.translate(20, 10)
+    G.translate(W/2, 70)
     G.scale(0.8)
 
     G.setColor(1, 1, 1)
     G.draw(title_shadow_mesh)
 
-    G.setColor(0.2, 0.3, 0.5)
+    G.setShader(title_shader)
+    -- G.setColor(0.2, 0.3, 0.5)
     G.draw(title_mesh)
+    G.setShader()
+
 
     G.pop()
 

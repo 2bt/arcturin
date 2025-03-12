@@ -19,64 +19,82 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
+local inputs     = { Keyboard() }
+
+local state      = "title"
+local next_state = nil
+local blend      = 0
+
+local BLEND_SPEED = 0.1
 
 Game = {
-    inputs = { Keyboard() },
-    state  = "title",
+    inputs = inputs
 }
-
 function Game:init()
     World:init()
 end
 
 function Game:add_joystick(j)
-    table.insert(self.inputs, Joystick(j))
+    table.insert(inputs, Joystick(j))
 end
 function Game:remove_joystick(j)
-    for i, input in ipairs(self.inputs) do
+    for i, input in ipairs(inputs) do
         if input.joy == j then
-            table.remove(self.inputs, i)
+            table.remove(inputs, i)
             return
         end
     end
 end
 function Game:change_state(state)
-    self.next_state = state
+    blend      = 0
+    next_state = state
 end
 function Game:update()
 
-    for _, input in ipairs(self.inputs) do
+    for _, input in ipairs(inputs) do
         input:update()
         if not input.hero and not (input.start or input.a) then
             World:add_hero(input)
         end
     end
 
-    if self.next_state then
-        self.state = self.next_state
-        self.next_state = nil
+    -- state transition
+    if next_state then
+        if blend < 1 then
+            blend = math.min(blend + BLEND_SPEED, 1)
+            if blend == 1 then
+                state = next_state
+                next_state = nil
+            end
+        end
+    elseif blend > 0 then
+        blend = math.max(blend - BLEND_SPEED, 0)
     end
 
 
-    if self.state == "title" then
-        Title:update()
-    elseif self.state == "playing" then
-        World:update()
-    end
+    -- if blend == 0 then
+        if state == "title" then
+            Title:update()
+        elseif state == "playing" then
+            World:update()
+        end
+    -- end
 
 end
 
 function Game:draw()
     G.clear(0, 0, 0)
 
-    if self.state == "title" then
+    if state == "title" then
         Title:draw()
-    elseif self.state == "playing" then
+    elseif state == "playing" then
         World:draw()
     end
 
-    -- for i, input in ipairs(self.inputs) do
+    -- for i, input in ipairs(inputs) do
     --     G.print(("%d %d"):format(input.state.dx, input.state.dy), 10, i * 20)
     -- end
 
+    G.setColor(0, 0, 0, blend)
+    G.rectangle("fill", 0, 0, W, H)
 end
