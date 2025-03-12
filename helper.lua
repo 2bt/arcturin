@@ -35,7 +35,13 @@ function randf(min, max)
 end
 
 function mix(a, b, x)
-    return a * (1 - x) + b * x
+    local y = 1 - x
+    if type(a) == "number" then
+        return a * y + b * x
+    end
+    local c = {}
+    for i = 1, #a do c[i] = a[i] * y + b[i] * x end
+    return c
 end
 
 function table.tostring(t)

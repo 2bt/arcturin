@@ -12,7 +12,7 @@ end
 
 
 
-local CRATE_COLOR1 = { 0.3, 0.51, 0.2 }
+local CRATE_COLOR1 = { 0.25, 0.48, 0.19 }
 local CRATE_COLOR2 = { 0.12, 0.28, 0.17 }
 Crate = Solid:new()
 function Crate:init(x, y)

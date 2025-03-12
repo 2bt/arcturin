@@ -33,12 +33,6 @@ function MeshBuilder:build()
 end
 
 
--- color helper
-local function color_scale(v, r, g, b)
-    return v*r, v*g, v*b
-end
-
-
 -- Felzenszwalb & Huttenlocher algorithm
 local function get_distances(map)
     local rows = map.h
@@ -292,20 +286,31 @@ function generate_map_mesh(map)
 
     -- stones
     local dist = get_distances(map)
-    b:color(0.4, 0.3, 0.2)
     for y = 0, map.h - 1 do
         for x = 0, map.w - 1 do
             if map:tile_at(x, y) == 1 then
                 local d = dist[x + y * map.w + 1]
                 local r = randf(0.9, d)
-                local f =  r < 1 and 0.7
+                local f = (r < 1 and 0.7
                         or r < 3 and 0.4
-                        or           0.15
-                local r = randf(0, 10)
-                local i = r < 4 and 3 or 9
-                b:color(color_scale(f, unpack(COLORS[i])))
-                local poly = voronoi(map, dist, x, y)
-                if #poly > 6 then b:polygon(poly) end
+                        or r < 5 and 0.15
+                        or           0)
+
+
+                if f > 0 then
+
+                    local r = randf(0, 10)
+
+                    local c = COLORS[r < 4 and 3 or 9]
+                    local g = 0.02
+                    local c = mix({ g, g, g }, c, f)
+                    b:color(unpack(c))
+
+
+                    local poly = voronoi(map, dist, x, y)
+                    if #poly > 6 then b:polygon(poly) end
+                end
+
             end
         end
     end
