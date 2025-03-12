@@ -159,8 +159,8 @@ function World:draw()
 
     -- background
     if not bg_mesh then
-        local color1 = { 0.05, 0.1, 0.1 }
-        local color2 = { 0.1,  0.2, 0.3 }
+        local color1 = { 0.1,  0.18,  0.25 }
+        local color2 = { 0.01, 0.08, 0.08 }
         bg_mesh = G.newMesh({
             { 0, 0, 0, 0, unpack(color1) },
             { W, 0, 0, 0, unpack(color1) },

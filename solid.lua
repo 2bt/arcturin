@@ -11,6 +11,9 @@ function Solid:draw()
 end
 
 
+
+local CRATE_COLOR1 = { 0.3, 0.51, 0.2 }
+local CRATE_COLOR2 = { 0.12, 0.28, 0.17 }
 Crate = Solid:new()
 function Crate:init(x, y)
     self.box = Box(x, y, TILE_SIZE, TILE_SIZE)
@@ -27,15 +30,13 @@ function Crate:hit(power)
         end
     end
 end
-function Crate:update()
-end
 function Crate:draw()
 
     local q = self.hp > 1 and 1 or 3
-    G.setColor(0.19, 0.27, 0.07)
+    G.setColor(unpack(CRATE_COLOR1))
     G.rectangle("fill", self.box.x,     self.box.y,     4, 4, q)
     G.rectangle("fill", self.box.x + 4, self.box.y + 4, 4, 4, q)
-    G.setColor(0.12, 0.15, 0.1)
+    G.setColor(unpack(CRATE_COLOR2))
     G.rectangle("fill", self.box.x + 4, self.box.y,     4, 4, q)
     G.rectangle("fill", self.box.x,     self.box.y + 4, 4, 4, q)
 end
@@ -47,7 +48,7 @@ function CrateParticle:init(x, y)
     self.vx    = love.math.random() * 3 - 1.5
     self.vy    = love.math.random() * 3 - 2
     self.ttl   = 10 + love.math.random(20)
-    self.taint = love.math.random(1, 2)
+    self.color = love.math.random(1, 2) == 1 and CRATE_COLOR1 or CRATE_COLOR2
 end
 function CrateParticle:update()
     self.ttl = self.ttl - 1
@@ -69,10 +70,6 @@ function CrateParticle:update()
 end
 function CrateParticle:draw()
     local r = math.min(1, self.ttl / 5)
-    if self.taint == 1 then
-        G.setColor(0.19, 0.27, 0.07)
-    else
-        G.setColor(0.12, 0.15, 0.1)
-    end
+    G.setColor(unpack(self.color))
     G.circle("fill", self.box:center_x(), self.box:center_y() + (1 - r), r)
 end

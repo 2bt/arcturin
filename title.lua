@@ -50,7 +50,7 @@ vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     vec3 c2 = vec3(0.2, 0.3, 0.5);
     vec3 c3 = vec3(0.1, 0.1, 0.3);
 
-    vec3 o = mix(c1, c2, smoothstep(0.0, 10.0, uv.y));
+    vec3 o = mix(c1, c2, smoothstep(-5.0, 5.0, uv.y));
     o = mix(o, mix(c1, c2, 0.5), v * 0.8);
 
 
@@ -73,7 +73,7 @@ do
             local x2 = p[i]
             local y2 = p[i + 1]
             if x2 < x1 then
-                local l = 20
+                local l = 15
                 local c1 = { 0.2, 0.2, 0.25 }
                 local c2 = { 0,   0,   0    }
                 local v1 = { x1, y1,     0, 0, unpack(c1) }
@@ -87,7 +87,7 @@ do
     end
 
     local x = -80
-    local y = -30
+    local y = -35
     local t = Turtle()
 
     -- A
@@ -160,7 +160,7 @@ end
 function Title:draw()
     G.clear(0, 0, 0)
     G.push()
-    G.translate(W/2, 70)
+    G.translate(W/2, 75)
     G.scale(0.8)
 
     G.setColor(1, 1, 1)

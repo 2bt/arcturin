@@ -65,29 +65,43 @@ function UfoEnemy:draw()
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
 end
 
+local ANIM_IDLE = 1
+local ANIM_WALK = 2
+local ANIM_JUMP = 3
 
-WalkerEnemy = Enemy:new()
+WalkerEnemy = Enemy:new({
+    model = Model("assets/walker.model"),
+})
 function WalkerEnemy:init(x, y)
-    self.box        = Box.make_above(x, y, 16, 16)
+    self.box        = Box.make_above(x, y, 14, 14)
     self.hp         = 7
     self.vy         = 0
     self.wait_count = 0
     self.slow_count = 0
+
+    self.anim_manager = AnimationManager(self.model)
 end
 function WalkerEnemy:sub_update()
+
+    local anim = ANIM_WALK
+
     local vx = 0
     if self.wait_count > 0 then
+        anim = ANIM_IDLE
         self.wait_count = self.wait_count - 1
+        if self.wait_count == 0 then
+            self.dir = -self.dir
+        end
     else
         vx = self.dir * 1
     end
+
     if self.slow_count > 0 then
         self.slow_count = self.slow_count - 1
         vx = vx * 0.5
     end
     if World:move_x(self.box, vx) then
-        self.wait_count = 10
-        self.dir = -self.dir
+        self.wait_count = 20
     end
 
     self.vy = self.vy + GRAVITY
@@ -97,10 +111,25 @@ function WalkerEnemy:sub_update()
             self.slow_count = 20
         end
         self.vy = 0
+    else
+        anim = ANIM_JUMP
     end
+    self.anim_manager:play(anim, 0.1)
+
+
+    local lt = self.anim_manager:update()
+    self.gt = self.model:get_global_transform(lt)
 
 end
 function WalkerEnemy:draw()
-    G.setColor(unpack(COLORS[8]))
-    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
+    -- G.setColor(unpack(COLORS[8]))
+    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
+
+    G.push()
+    G.translate(self.box:center_x(), self.box:bottom())
+    G.scale(self.dir, 1)
+    G.scale(0.06)
+    self.model:draw(self.gt)
+    G.pop()
+
 end
