@@ -37,6 +37,7 @@ function HeroBullet:spark(nx, ny)
         local y = cy + randf(-nx, nx) * 4
         World:add_particle(SparkParticle(x, y))
     end
+    -- DEBUG: for testing explosions
     -- make_explosion(self.box:get_center())
 end
 function HeroBullet:update()

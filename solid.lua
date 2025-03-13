@@ -42,7 +42,7 @@ function Crate:draw()
 end
 
 
-CrateParticle = Object:new({ alive = true })
+CrateParticle = Particle:new()
 function CrateParticle:init(x, y)
     self.box   = Box(x-1, y-1, 2, 2)
     self.vx    = love.math.random() * 3 - 1.5
@@ -50,12 +50,8 @@ function CrateParticle:init(x, y)
     self.ttl   = 10 + love.math.random(20)
     self.color = love.math.random(1, 2) == 1 and CRATE_COLOR1 or CRATE_COLOR2
 end
-function CrateParticle:update()
-    self.ttl = self.ttl - 1
-    if self.ttl < 0 then
-        self.alive = false
-        return
-    end
+function CrateParticle:sub_update()
+
     self.vx = self.vx * 0.95
     self.vy = self.vy * 0.95
     self.vy = clamp(self.vy + GRAVITY, -MAX_VY, MAX_VY)

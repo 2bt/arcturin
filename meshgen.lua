@@ -296,7 +296,6 @@ function generate_map_mesh(map)
                         or r < 5 and 0.15
                         or           0)
 
-
                 if f > 0 then
 
                     local r = randf(0, 10)

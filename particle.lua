@@ -1,13 +1,15 @@
 Particle = Object:new({
     alive = true,
+    ttl   = nil,
     tick  = 0,
-    ttl   = 10,
 })
 function Particle:update()
-    self.ttl = self.ttl - 1
-    if self.ttl < 0 then
-        self.alive = false
-        return
+    if self.ttl then
+        self.ttl = self.ttl - 1
+        if self.ttl < 0 then
+            self.alive = false
+            return
+        end
     end
     self.tick = self.tick + 1
     if self.sub_update then self:sub_update() end
@@ -16,7 +18,8 @@ end
 
 FlashParticle = Particle:new({
     colors = {
-        { 1,   1,   1,   0.7 },
+        { 1,   1,   1,   0.9 },
+        { 1,   0.8, 0.7, 0.9 },
         { 1,   0.5, 0.2, 0.7 },
         { 0.7, 0.5, 0.2, 0.5 },
         { 0.7, 0.2, 0,   0.3 },

@@ -156,11 +156,12 @@ function Title:update()
 end
 
 
-
 function Title:draw()
     G.clear(0, 0, 0)
     G.push()
     G.translate(W/2, 75)
+
+
     G.scale(0.8)
 
     G.setColor(1, 1, 1)
