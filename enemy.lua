@@ -77,7 +77,6 @@ function WalkerEnemy:init(x, y)
     self.hp         = 7
     self.vy         = 0
     self.wait_count = 0
-    self.slow_count = 0
 
     self.anim_manager = AnimationManager(self.model)
 end
@@ -93,13 +92,9 @@ function WalkerEnemy:sub_update()
             self.dir = -self.dir
         end
     else
-        vx = self.dir * 1
+        vx = self.dir * 1.1
     end
 
-    if self.slow_count > 0 then
-        self.slow_count = self.slow_count - 1
-        vx = vx * 0.5
-    end
     if World:move_x(self.box, vx) then
         self.wait_count = 20
     end

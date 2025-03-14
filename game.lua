@@ -46,7 +46,7 @@ function Game:remove_joystick(j)
     end
 end
 function Game:change_state(state)
-    blend      = 0
+    if next_state then return end
     next_state = state
 end
 function Game:update()

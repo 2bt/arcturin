@@ -7,7 +7,7 @@ local JUMP_HEIGHT  = 5
 local MODEL_SCALE = 0.05
 local ANIM_IDLE   = 1
 local ANIM_RUN    = 2
-local ANIM_CROUCH = 3
+local ANIM_HUNKER = 3
 local ANIM_AIM    = 4
 local ANIM_JUMP   = 5
 
@@ -151,7 +151,7 @@ do
     local a = AnimationManager(Hero.model)
     a:play(ANIM_AIM, 0)
     for i = 0, 1, 1/16 do
-        a:seek(i, 0)
+        a:seek(i)
         local lt = a:update()
         local gt = a.model:get_global_transform(lt)
         local x, y = unpack(gt[18])
@@ -162,6 +162,13 @@ do
     end
     Hero.aim_offset = { x = ox, y = oy }
 end
+
+local STATE_NORMAL = 0 -- idle, run
+local STATE_HUNKER = 1
+local STATE_AIM    = 2
+local STATE_IN_AIR = 3
+
+
 function Hero:init(input, index, x, y)
     self.input = input
     self.index = index
@@ -173,23 +180,44 @@ function Hero:init(input, index, x, y)
     self.dir = 1
     self.hp  = 12
 
-    self.is_crouching = false
-    self.is_aiming    = false
-    self.in_air       = false
-
-    self.aim          = 0.5
-    self.aim_counter  = 0
-    self.jump_control = false
-
-    self.shoot_counter = 0
-
-    self.muzzle_x      = 0
-    self.muzzle_y      = 0
-
+    self.state              = STATE_NORMAL
+    self.aim                = 0.5
+    self.aim_counter        = 0
+    self.hunk_counter       = 0
+    self.jump_control       = false
+    self.shoot_counter      = 0
     self.invincible_counter = 0
 
     self.anim_manager = AnimationManager(self.model)
-    self.anim_manager:play(ANIM_IDLE, 0)
+end
+
+
+function Hero:set_state(state)
+
+    if self.state == STATE_HUNKER then
+        -- get up
+        self.box.y = self.box.y - 6.5
+        self.box.h = self.box.h + 6.5
+    end
+
+    self.state = state
+
+    if state == STATE_IN_AIR then
+        self.anim_manager:play(ANIM_JUMP)
+
+    elseif state == STATE_HUNKER then
+        self.box.y = self.box.y + 6.5
+        self.box.h = self.box.h - 6.5
+        self.anim_manager:play(ANIM_HUNKER)
+
+    elseif state == STATE_AIM then
+        self.aim = 0.5 -- neutral position
+        self.shoot_counter = 0
+        self.anim_manager:play(ANIM_AIM)
+        self.anim_manager:seek(self.aim)
+    end
+
+
 end
 
 function Hero:update()
@@ -197,104 +225,97 @@ function Hero:update()
     local jump  = input.a
     local shoot = input.b
 
-    if self.prev_is_crouching then
-        self.box.y = self.box.y - 6.5
-        self.box.h = self.box.h + 6.5
-    end
-    local is_crouching = false
 
-    -- aiming
-    if not self.in_air and self.vx == 0 and shoot then
-        if not self.is_aiming then
+
+    if self.state == STATE_NORMAL then
+
+        -- turn
+        if input.dx ~= 0 then
+            self.dir = input.dx
+            self.anim_manager:play(ANIM_RUN)
+        else
+            self.anim_manager:play(ANIM_IDLE)
+        end
+
+        -- move
+        local acc = ACCEL_GROUND
+        self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
+        World:move_x(self.box, self.vx)
+
+        -- jump
+        if jump and not self.prev_jump then
+            self.vy           = -JUMP_HEIGHT
+            self.jump_control = true
+        end
+
+        -- start hunkering
+        if input.dx == 0 and input.down then
+            self:set_state(STATE_HUNKER)
+        end
+
+        -- start aiming
+        if input.dx == 0 and shoot then
             self.aim_counter = self.aim_counter + 1
             if self.aim_counter > 20 then
-                -- start aiming
-                self.is_aiming = true
-                self.aim       = 0.5 -- neutral position
-                self.anim_manager:play(ANIM_AIM)
-                self.anim_manager:seek(self.aim)
+                self:set_state(STATE_AIM)
             end
+        else
+            self.aim_counter = 0
         end
-    else
-        self.is_aiming   = false
-        self.aim_counter = 0
-        self.aim         = 0.5
-    end
 
 
-    if not self.is_aiming then
+    elseif self.state == STATE_IN_AIR then
 
         -- turn
         if input.dx ~= 0 then self.dir = input.dx end
 
-        -- moving
-        local acc = self.in_air and ACCEL_AIR or ACCEL_GROUND
+        -- move
+        local acc = ACCEL_AIR
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
         World:move_x(self.box, self.vx)
 
-        -- jumping
-        local fall_though = false
-        if not self.in_air and jump and not self.prev_jump then
-            if input.dy > 0 then
-                fall_though = true
-            else
-                self.vy           = -JUMP_HEIGHT
-                self.jump_control = true
-                self.in_air       = true
+        if self.jump_control then
+            if not jump and self.vy < -1 then
+                self.vy = -1
+                self.jump_control = false
+            end
+            if self.vy > -1 then self.jump_control = false end
+        end
+
+    elseif self.state == STATE_HUNKER then
+        if self.hunk_counter > 0 then
+            self.hunk_counter = self.hunk_counter - 1
+            if input.dx ~= 0 then
+                self.hunk_counter = 0
             end
         end
-        if self.in_air then
-            if self.jump_control then
-                if not jump and self.vy < -1 then
-                    self.vy = -1
-                    self.jump_control = false
-                end
-                if self.vy > -1 then self.jump_control = false end
-            end
-            self.anim_manager:play(ANIM_JUMP)
-        else
-            if self.vx ~= 0 then
-                self.anim_manager:play(ANIM_RUN)
-            elseif input.down then
-                is_crouching = true
-                self.anim_manager:play(ANIM_CROUCH)
-            else
-                self.anim_manager:play(ANIM_IDLE)
-            end
+
+        -- turn
+        if input.dx ~= 0 then self.dir = input.dx end
+        self.anim_manager:play(ANIM_HUNKER)
+
+        if not input.down and self.hunk_counter == 0 then
+            self:set_state(STATE_NORMAL)
         end
-    end
 
+    elseif self.state == STATE_AIM then
 
-    -- gravity
-    self.vy = self.vy + GRAVITY
-    local vy = clamp(self.vy, -MAX_VY, MAX_VY)
-
-    self.in_air = true
-    if World:move_y(self.box, vy) then
-        if vy > 0 then
-            self.in_air = false
+        -- stop aiming
+        if not shoot then
+            self:set_state(STATE_NORMAL)
         end
-        self.vy = 0
-    end
-
-
-    if self.is_aiming then
 
         if self.shoot_counter > 0 then
             self.shoot_counter = self.shoot_counter - 1
         else
             self.shoot_counter = 2
-
             local a = self.dir * self.aim * math.pi
-
-            self.muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
-            self.muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
-
-            World:add_hero_bullet(AimShot(self.muzzle_x, self.muzzle_y, a))
+            local muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
+            local muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
+            World:add_hero_bullet(AimShot(muzzle_x, muzzle_y, a))
         end
 
         if self.shoot_counter == 0 then
-
             self.aim = self.aim - self.dir * input.dx * (1/16)
             if self.aim > 1.0 then
                 self.aim = 2 - self.aim
@@ -303,58 +324,80 @@ function Hero:update()
                 self.aim = -self.aim
                 self.dir = -self.dir
             end
-
         end
 
         self.anim_manager:play(ANIM_AIM)
         self.anim_manager:seek(self.aim, 0.3)
+    end
 
-    else
-        if shoot and not self.prev_shoot then
-            self.muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
-            self.muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
-            if is_crouching then
-                self.muzzle_y = self.muzzle_y + 6.5
+
+    do
+        -- move vertically
+        -- gravity
+        self.vy = self.vy + GRAVITY
+        local falling_fast = self.vy > 4.8
+        local vy = clamp(self.vy, -MAX_VY, MAX_VY)
+        local in_air = true
+        if World:move_y(self.box, vy) then
+            if vy > 0 then
+                in_air = false
             end
-            World:add_hero_bullet(Laser(self.muzzle_x, self.muzzle_y, self.dir))
+            self.vy = 0
+        end
+        if self.state == STATE_IN_AIR and not in_air then
+            -- bend knees to dampen landing
+            if falling_fast and input.dx == 0 then
+                self.hunk_counter = 5
+                self:set_state(STATE_HUNKER)
+            else
+                self:set_state(STATE_NORMAL)
+            end
+
+        elseif self.state ~= STATE_IN_AIR and in_air then
+            self:set_state(STATE_IN_AIR)
         end
     end
 
-    local lt = self.anim_manager:update()
-    self.gt = self.model:get_global_transform(lt)
-
-    if is_crouching then
-        self.box.y = self.box.y + 6.5
-        self.box.h = self.box.h - 6.5
+    -- shooting
+    if shoot and not self.prev_shoot then
+        local muzzle_x = self.box:center_x() + 10 * self.dir
+        local muzzle_y = self.box.y          + 8.6
+        World:add_hero_bullet(Laser(muzzle_x, muzzle_y, self.dir))
     end
-
-    self.prev_jump  = jump
-    self.prev_shoot = shoot
-    self.prev_is_crouching = is_crouching
-
 
 
     if self.invincible_counter > 0 then
         self.invincible_counter = self.invincible_counter - 1
-        return
-    end
+    else
 
-    -- enemy collision
-    for _, e in ipairs(World.enemies) do
-        if self.box:overlaps(e.box) then
-            self.hp = math.max(0, self.hp - 1)
-            self.invincible_counter = 60
-            -- knockback
-            self.vy = -2
-            local dir = self.box:center_x() > e.box:center_x() and 1 or -1
-            self.vx = dir * 3
+        -- enemy collision
+        for _, e in ipairs(World.enemies) do
+            if self.box:overlaps(e.box) then
+                self.hp = math.max(0, self.hp - 1)
+                self.invincible_counter = 60
+                -- knockback
+                self.vy = -2
+                local dir = self.box:center_x() > e.box:center_x() and 1 or -1
+                self.vx = dir * 3
 
+            end
         end
+
     end
+
+
+    self.prev_jump  = jump
+    self.prev_shoot = shoot
+
+
+    -- animation stuff
+    local lt = self.anim_manager:update()
+    self.gt = self.model:get_global_transform(lt)
+
 end
 
 function Hero:draw()
-    -- G.setColor(1, 1, 1, 0.1)
+    -- G.setColor(1, 1, 1, 0.2)
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 
     if self.invincible_counter % 2 == 1 then return end
