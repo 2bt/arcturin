@@ -23,10 +23,10 @@ function Crate:hit(power)
     self.hp = self.hp - power
     if self.hp <= 0 then
         self.alive = false
-        for i = 1, 20 do
+        for i = 1, 10 do
             World:add_particle(CrateParticle(
-                self.box:center_x() + love.math.random(-4, 4),
-                self.box:center_y() + love.math.random(-4, 4)))
+                self.box:center_x() + randf(-4, 4),
+                self.box:center_y() + randf(-4, 4)))
         end
     end
 end
@@ -44,10 +44,11 @@ end
 
 CrateParticle = Particle:new()
 function CrateParticle:init(x, y)
-    self.box   = Box(x-1, y-1, 2, 2)
-    self.vx    = love.math.random() * 3 - 1.5
-    self.vy    = love.math.random() * 3 - 2
-    self.ttl   = 10 + love.math.random(20)
+    self.r     = randf(0.5, 1.3)
+    self.box   = Box(x - self.r, y - self.r, self.r, self.r)
+    self.vx    = randf(-1.5, 1.5)
+    self.vy    = randf(-2.0, 1.0)
+    self.ttl   = love.math.random(10, 40)
     self.color = love.math.random(1, 2) == 1 and CRATE_COLOR1 or CRATE_COLOR2
 end
 function CrateParticle:sub_update()
@@ -60,12 +61,12 @@ function CrateParticle:sub_update()
         self.vy = self.vy * 0.8
     end
     if World:move_y(self.box, self.vy) then
-        self.vy = self.vy * -love.math.random()
+        self.vy = self.vy * -randf(0, 0.7)
         self.vx = self.vx * 0.8
     end
 end
 function CrateParticle:draw()
-    local r = math.min(1, self.ttl / 5)
+    local r = math.min(self.r, self.ttl / 5)
     G.setColor(unpack(self.color))
     G.circle("fill", self.box:center_x(), self.box:center_y() + (1 - r), r)
 end

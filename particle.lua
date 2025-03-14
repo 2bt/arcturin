@@ -17,23 +17,22 @@ end
 
 
 FlashParticle = Particle:new({
-    colors = {
-        { 1,   1,   1,   0.9 },
-        { 1,   0.8, 0.7, 0.9 },
-        { 1,   0.5, 0.2, 0.7 },
-        { 0.7, 0.5, 0.2, 0.5 },
-        { 0.7, 0.2, 0,   0.3 },
-    }
+    R = { 1, 1.1, 0.8, 0.6, 0.3}
 })
 function FlashParticle:init(x, y, r)
     self.r = r or 5
     self.x = x
     self.y = y
-    self.ttl = #self.colors
+    self.ttl = #self.R
+end
+function FlashParticle:sub_update()
+    self.r = self.r * 0.8
 end
 function FlashParticle:draw()
-    G.setColor(unpack(self.colors[self.tick]))
-    G.circle("fill", self.x, self.y, self.r)
+    local c1 = { 1,   1,   0.6, 0.7 }
+    local c2 = { 1,   0.5, 0.2, 0.6 }
+    G.setColor(unpack(self.tick == 1 and c1 or c2))
+    G.circle("fill", self.x, self.y, self.r * self.R[self.tick])
 end
 
 
@@ -66,36 +65,108 @@ function SparkParticle:draw()
 end
 
 
-local Dust = Particle:new()
-function Dust:init(x, y)
-    local a = randf(0, 2 * math.pi)
-    self.x = x + math.sin(a) * randf(0, 4)
-    self.y = y + math.cos(a) * randf(0, 4)
-    a = randf(0, 2 * math.pi)
 
-    local v = randf(0.2, 1.5)
-    self.vx  = math.sin(a) * v
-    self.vy  = math.cos(a) * v
-    self.ttl = love.math.random(10, 30)
-    self.r   = randf(4, 6)
-    self.r_fade = randf(0.9, 0.96)
+
+local DustParticle = Particle:new()
+function DustParticle:init(x, y, a)
+    self.x = x + randf(-3, 3)
+    self.y = y + randf(-3, 3)
+
+    a = a + randf(-0.1, 0.1)
+    local v = randf(0.4, 1.1)
+    self.vx = math.sin(a) * v
+    self.vy = math.cos(a) * v
+
+    self.r = 0
+    self.r_tween = Tween(0):tween(randf(4, 6), randf(1, 15))
+    self.r_tween:set_ease(Tween.EASE_OUT):set_trans(Tween.TRANS_QUAD):tween(0, randf(15, 25))
+
 end
-function Dust:sub_update()
-    self.r  = self.r * self.r_fade
-    self.vx = self.vx * 0.9
-    self.vy = self.vy * 0.9
+function DustParticle:sub_update()
+    self.r = self.r_tween:update()
+    if self.r_tween:is_done() then
+        self.alive = false
+    end
+
+    self.vx = self.vx * 0.93
+    self.vy = self.vy * 0.93
     self.x  = self.x + self.vx
     self.y  = self.y + self.vy
 end
-function Dust:draw()
-    local a = math.min(0.7, self.ttl / 10)
-    G.setColor(0.4, 0.4, 0.4, a)
+function DustParticle:draw()
+    G.setColor(0.35, 0.35, 0.35, 0.6)
     G.circle("fill", self.x, self.y, self.r)
 end
 
+
+
+
+local DebrisParticle = Particle:new({
+    POLYS = {
+        { -1, -1, 1, -0.8, 0.2, 1, -0.8, 1 },
+        { -0.7, -1, 1, -0.8, 0, 1 },
+    }
+
+})
+function DebrisParticle:init(x, y)
+    self.r = randf(0.5, 2)
+    x = x - self.r + randf(-5, 5)
+    y = y - self.r + randf(-5, 5)
+    self.box = Box(x, y, self.r, self.r)
+    self.vx  = randf(-2.5, 2.5)
+    self.vy  = randf(-4.5, 1)
+    self.a   = randf(0, 2 * math.pi)
+    self.va  = randf(-0.5, 0.5)
+
+    self.poly = DebrisParticle.POLYS[love.math.random(1, #DebrisParticle.POLYS)]
+
+    self.ttl = love.math.random(70, 100)
+end
+function DebrisParticle:sub_update()
+
+    self.vx = self.vx * 0.99
+    self.vy = self.vy * 0.99
+    self.a = self.a + self.va
+
+    self.vy = self.vy + GRAVITY
+
+    if World:move_x(self.box, self.vx) then
+        self.ttl = math.max(0, self.ttl - 20)
+        self.vx  = self.vx * -randf(0, 1)
+        self.va  = randf(-0.5, 0.5)
+    end
+
+    local vy = clamp(self.vy, -MAX_VY, MAX_VY)
+    if World:move_y(self.box, vy) then
+        self.ttl = math.max(0, self.ttl - 20)
+        self.vy   = self.vy * -randf(0, 1)
+        self.va  = randf(-0.5, 0.5)
+    end
+end
+function DebrisParticle:draw()
+    G.setColor(0.4, 0.4, 0.4, math.min(1, self.ttl / 10))
+
+    G.push()
+    G.translate(self.box:get_center())
+    G.rotate(self.a)
+    G.scale(self.r)
+
+    G.polygon("fill", self.poly)
+
+    G.pop()
+end
+
+
 function make_explosion(x, y)
-    for i = 1, 20 do
-        World:add_particle(Dust(x, y))
+    for i = 1, 7 do
+        World:add_particle(DebrisParticle(x, y))
+    end
+
+    local N = 20
+    for i = 1, N do
+        World:add_particle(DustParticle(x, y, i * 2 * math.pi / N))
     end
     World:add_particle(FlashParticle(x, y, 10))
 end
+
+
