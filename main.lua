@@ -2,20 +2,6 @@ G = love.graphics
 W = 320
 H = 180
 
-require("helper")
-require("box")
-require("input")
-require("model")
-require("animation_manager")
-require("tween")
-
-require("particle")
-require("solid")
-require("hero")
-require("enemy")
-require("map")
-require("world")
-require("title")
 require("game")
 
 function love.load()
