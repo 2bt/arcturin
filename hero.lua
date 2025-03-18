@@ -1,3 +1,5 @@
+MAX_HP = 12
+
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.25
@@ -12,6 +14,8 @@ local ANIM_AIM    = 4
 local ANIM_JUMP   = 5
 
 local BODY_POLY   = 4
+
+local ENEMY_DAMAGE = 3
 
 
 
@@ -178,7 +182,7 @@ function Hero:init(input, index, x, y)
     self.vy  = 0
     self.vx  = 0
     self.dir = 1
-    self.hp  = 12
+    self.hp  = MAX_HP
 
     self.state              = STATE_NORMAL
     self.aim                = 0.5
@@ -373,13 +377,12 @@ function Hero:update()
         -- enemy collision
         for _, e in ipairs(World.enemies) do
             if self.box:overlaps(e.box) then
-                self.hp = math.max(0, self.hp - 1)
+                self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
                 self.invincible_counter = 60
                 -- knockback
                 self.vy = -2
                 local dir = self.box:center_x() > e.box:center_x() and 1 or -1
                 self.vx = dir * 3
-
             end
         end
 

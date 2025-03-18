@@ -39,31 +39,5 @@ function Enemy:hit(power)
 end
 
 
-
-UfoEnemy = Enemy:new()
-function UfoEnemy:init(x, y)
-    self.box  = Box.make_above(x, y, 16, 14)
-    self.hp   = 7
-    self.tick = 0
-end
-function UfoEnemy:sub_update()
-    self.tick = self.tick + 1
-
-    local vx = self.dir * 1
-    local t = self.tick * 0.12
-    local vy = math.cos(t) * 1.5
-    if t % (2 * math.pi) > math.pi then vy = -vy end
-
-    if World:move_x(self.box, vx) then
-        self.dir = -self.dir
-    end
-    World:move_y(self.box, vy)
-
-end
-function UfoEnemy:draw()
-    G.setColor(unpack(COLORS[4]))
-    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
-end
-
-
-require("walker_enemy")
+require("enemies.ufo_enemy")
+require("enemies.walker_enemy")

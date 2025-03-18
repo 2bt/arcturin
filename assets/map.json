@@ -251,17 +251,6 @@
                 }, 
                 {
                  "height":16,
-                 "id":34,
-                 "name":"walker",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":324,
-                 "y":104
-                }, 
-                {
-                 "height":16,
                  "id":35,
                  "name":"walker",
                  "rotation":0,
@@ -369,6 +358,17 @@
                  "width":16,
                  "x":1300,
                  "y":224
+                }, 
+                {
+                 "height":16,
+                 "id":45,
+                 "name":"walker",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":26,
+                 "y":50
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -389,7 +389,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":45,
+ "nextobjectid":46,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.8.2",

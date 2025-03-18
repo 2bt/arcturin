@@ -5,6 +5,7 @@ TILE_SIZE = 8
 
 local ACTIVE_AREA_PADDING = 8
 
+
 World = {}
 function World:init()
     self.solids        = {}
@@ -202,10 +203,13 @@ function World:draw()
 
     -- HUD
     for i, h in ipairs(self.heroes) do
-        G.setColor(0.5, 0.5, 0.5, 0.5)
-        G.rectangle("fill", 4, i * 8 - 4, 12 * 4, 4)
-        G.setColor(0.5, 0.8, 0.3, 0.5)
-        G.rectangle("fill", 4, i * 8 - 4, h.hp * 4, 4)
+        for x = 1, MAX_HP do
+            G.setColor(0.5, 0.5, 0.5, 0.5)
+            G.rectangle("fill", 4 + (x-1) * 4, 4 + (i-1) * 6, 3.5, 3.5)
+            if x <= h.hp then
+                G.setColor(0.5, 0.8, 0.3, 0.5)
+                G.rectangle("fill", 4 + (x-1) * 4, 4 + (i-1) * 6, 3.5, 3.5)
+            end
+        end
     end
-
 end
