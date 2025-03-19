@@ -36,7 +36,6 @@ function love.draw()
 end
 
 
-
 function love.keypressed(k)
     if k == "p" then
         local screenshot = love.graphics.newScreenshot()

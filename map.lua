@@ -1,5 +1,4 @@
 local json = require("dkjson")
-require("meshgen")
 
 local ENEMY_MAP = {
     ["ufo"]    = UfoEnemy,
@@ -11,9 +10,6 @@ function Map:init(name)
 
     local raw = love.filesystem.read(name)
     local data = json.decode(raw)
-
-    self.w = data.width
-    self.h = data.height
 
     for _, layer in ipairs(data.layers) do
 
@@ -34,8 +30,9 @@ function Map:init(name)
             end
         elseif layer.type == "tilelayer" then
             self.tile_data = layer.data
+            self.w         = layer.width
+            self.h         = layer.height
         end
-
     end
 
     local i = 1
@@ -49,7 +46,7 @@ function Map:init(name)
         end
     end
 
-    self.mesh = generate_map_mesh(self)
+    self.meshes = generate_map_meshes(self)
 end
 function Map:tile_at(x, y)
     if x < 0 or x >= self.w then return 1 end
@@ -82,7 +79,9 @@ function Map:collision(box, axis)
 
     return overlap
 end
-function Map:draw()
+function Map:draw(layer)
     G.setColor(1, 1, 1)
-    G.draw(self.mesh)
+
+
+    G.draw(self.meshes[layer])
 end

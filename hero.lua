@@ -1,24 +1,3 @@
-MAX_HP = 12
-
-local MAX_SPEED    = 1.25
-local ACCEL_GROUND = 0.5
-local ACCEL_AIR    = 0.25
-
-local JUMP_HEIGHT  = 5
-
-local MODEL_SCALE = 0.05
-local ANIM_IDLE   = 1
-local ANIM_RUN    = 2
-local ANIM_HUNKER = 3
-local ANIM_AIM    = 4
-local ANIM_JUMP   = 5
-
-local BODY_POLY   = 4
-
-local ENEMY_DAMAGE = 3
-
-
-
 local HeroBullet = Object:new({
     alive = true,
     first_update = true,
@@ -117,7 +96,7 @@ function Laser:init(x, y, dir)
     self.power = 5
 end
 function Laser:draw()
-    G.setColor(0.9, 1, 1, 0.8)
+    G.setColor(0.9, 1, 1, 0.7)
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
 end
 
@@ -131,23 +110,102 @@ function AimShot:init(x, y, a)
     self.a   = a
     self.ttl = 16
 end
+local AIM_MESH
+do
+    local v = {}
+    for x = -5, 5, 0.5 do
+        local y1 = math.cos(x * 0.14) * 22 - 18
+        local y2 = math.min(y1, -1)
+        table.insert(v, { x, y1, 0, 0, 1, 1, 0.9, 1 })
+        table.insert(v, { x, y2, 0, 0, 1, 1, 0.9, 0 })
+    end
+    AIM_MESH = G.newMesh(v, "strip", "static")
+end
 function AimShot:draw()
-    G.setColor(1, 1, 0.9, 0.8)
+    G.setColor(1, 1, 1)
     G.push()
     G.translate(self.box:get_center())
     G.rotate(-self.a)
-    G.polygon("fill", 0, 0, -5, -2, 0, 3, 5, -2)
+    G.draw(AIM_MESH)
+    -- G.polygon("fill",
+    --      0,  0,
+    --     -5, -2,
+    --      0,  3,
+    --      5, -2)
     G.pop()
+    -- G.setColor(1, 1, 1, 0.2)
+    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 end
 
 
+
+local HeroExplosion = Particle:new({
+    ttl = 40
+})
+function HeroExplosion:init(x, y)
+    self.x = x
+    self.y = y
+end
+function HeroExplosion:sub_update(x, y)
+    local c = self.tick % 20
+    if c == 1 then
+        make_explosion(self.x + randf(-10, 0), self.y + randf(-13, 0))
+    elseif c == 6 then
+        make_explosion(self.x + randf(0, 10), self.y + randf(-13, 0))
+    elseif c == 11 then
+        make_explosion(self.x + randf(-10, 0), self.y + randf(0, 13))
+    elseif c == 16 then
+        make_explosion(self.x + randf(0, 10), self.y + randf(0, 13))
+    end
+end
+
+
+
+MAX_HP = 12
+
+local MAX_SPEED    = 1.25
+local ACCEL_GROUND = 0.5
+local ACCEL_AIR    = 0.25
+local JUMP_HEIGHT  = 5
+local ENEMY_DAMAGE = 3
+
+
+local MODEL_SCALE = 0.05
+local BODY_POLY   = 4
+local ANIM_IDLE   = 1
+local ANIM_RUN    = 2
+local ANIM_HUNKER = 3
+local ANIM_AIM    = 4
+local ANIM_JUMP   = 5
+
+
+local STATE_NORMAL = 0 -- idle, run
+local STATE_HUNKER = 1
+local STATE_AIM    = 2
+local STATE_IN_AIR = 3
+local STATE_DEAD   = 4
+
+
 Hero = Object:new({
-    alive = true,
-    model = Model("assets/hero.model"),
-    prev_jump = true,
+    model      = Model("assets/hero.model"),
+    prev_jump  = true,
     prev_shoot = true,
 
+    state              = STATE_NORMAL,
+    aim                = 0.5,
+    aim_counter        = 0,
+    hunk_counter       = 0,
+    jump_control       = false,
+    shoot_counter      = 0,
+    invincible_counter = 0,
+    dead_counter       = 0,
+    vy                 = 0,
+    vx                 = 0,
+    dir                = 1,
+    hp                 = MAX_HP,
+    lives              = 0,
 })
+local AIM_OFFSET
 do
     -- precalculate aim offsets
     local ox = {}
@@ -164,38 +222,19 @@ do
         ox[i] = math.floor(ox[i] * 2 + 0.5) / 2
         oy[i] = math.floor(oy[i] * 2 + 0.5) / 2
     end
-    Hero.aim_offset = { x = ox, y = oy }
+    AIM_OFFSET = { x = ox, y = oy }
 end
-
-local STATE_NORMAL = 0 -- idle, run
-local STATE_HUNKER = 1
-local STATE_AIM    = 2
-local STATE_IN_AIR = 3
-
-
 function Hero:init(input, index, x, y)
     self.input = input
     self.index = index
     input.hero = self
-
     self.box = Box.make_above(x, y, 11, 23)
-    self.vy  = 0
-    self.vx  = 0
-    self.dir = 1
-    self.hp  = MAX_HP
-
-    self.state              = STATE_NORMAL
-    self.aim                = 0.5
-    self.aim_counter        = 0
-    self.hunk_counter       = 0
-    self.jump_control       = false
-    self.shoot_counter      = 0
-    self.invincible_counter = 0
-
     self.anim_manager = AnimationManager(self.model)
 end
 
-
+function Hero:is_gameover()
+    return self.lives == 0 and self.state == STATE_DEAD and self.dead_counter == 0
+end
 function Hero:set_state(state)
 
     if self.state == STATE_HUNKER then
@@ -205,6 +244,7 @@ function Hero:set_state(state)
     end
 
     self.state = state
+
 
     if state == STATE_IN_AIR then
         self.anim_manager:play(ANIM_JUMP)
@@ -224,12 +264,44 @@ function Hero:set_state(state)
 
 end
 
+
+function Hero:hit(damage)
+    self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
+    self.invincible_counter = 60
+
+    if self.hp == 0 then
+        World:add_particle(HeroExplosion(self.box:get_center()))
+
+
+        self:set_state(STATE_DEAD)
+        self.dead_counter = 120
+    end
+end
+
+
 function Hero:update()
     local input = self.input.state
     local jump  = input.a
     local shoot = input.b
 
 
+    -- dead
+    if self.state == STATE_DEAD then
+        if self.dead_counter > 0 then
+            self.dead_counter = self.dead_counter - 1
+            if self.dead_counter == 0 and self.lives > 0 then
+                -- respawn
+                self.lives = self.lives - 1
+                self.hp = MAX_HP
+                self.vx = 0
+                self.vy = 0
+                self.invincible_counter = 60
+
+                self:set_state(STATE_NORMAL)
+            end
+        end
+        return
+    end
 
     if self.state == STATE_NORMAL then
 
@@ -314,8 +386,8 @@ function Hero:update()
         else
             self.shoot_counter = 2
             local a = self.dir * self.aim * math.pi
-            local muzzle_x = self.box:center_x() + self.aim_offset.x[self.aim] * self.dir
-            local muzzle_y = self.box:bottom()   + self.aim_offset.y[self.aim]
+            local muzzle_x = self.box:center_x() + AIM_OFFSET.x[self.aim] * self.dir
+            local muzzle_y = self.box:bottom()   + AIM_OFFSET.y[self.aim]
             World:add_hero_bullet(AimShot(muzzle_x, muzzle_y, a))
         end
 
@@ -336,15 +408,18 @@ function Hero:update()
 
 
     do
+        self.solid_ground = nil
         -- move vertically
         -- gravity
         self.vy = self.vy + GRAVITY
         local falling_fast = self.vy > 4.8
         local vy = clamp(self.vy, -MAX_VY, MAX_VY)
         local in_air = true
-        if World:move_y(self.box, vy) then
+        local s = World:move_y(self.box, vy)
+        if s then
             if vy > 0 then
                 in_air = false
+                self.solid_ground = s
             end
             self.vy = 0
         end
@@ -377,8 +452,8 @@ function Hero:update()
         -- enemy collision
         for _, e in ipairs(World.enemies) do
             if self.box:overlaps(e.box) then
-                self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
-                self.invincible_counter = 60
+                self:hit(ENEMY_DAMAGE)
+
                 -- knockback
                 self.vy = -2
                 local dir = self.box:center_x() > e.box:center_x() and 1 or -1
@@ -400,6 +475,10 @@ function Hero:update()
 end
 
 function Hero:draw()
+    if self.state == STATE_DEAD then
+        return
+    end
+
     -- G.setColor(1, 1, 1, 0.2)
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 

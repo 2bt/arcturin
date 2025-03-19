@@ -3,7 +3,63 @@ MAX_VY    = 3
 TILE_SIZE = 8
 
 
-local ACTIVE_AREA_PADDING = 8
+SMALL_FONT = G.newFont("foobar/fonts/Hack-Regular.ttf", 5, "normal", 4)
+
+
+local color1 = { 0.1,  0.18,  0.25 }
+local color2 = { 0.01, 0.08, 0.08 }
+local Background = {
+    mesh = G.newMesh({
+        { 0, 0, 0, 0, unpack(color1) },
+        { W, 0, 0, 0, unpack(color1) },
+        { W, H, 0, 0, unpack(color2) },
+        { 0, H, 0, 0, unpack(color2) },
+    }),
+    shader = G.newShader([[
+        float gradient_noise(in vec2 uv) {
+            return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
+            }
+            vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
+                return c + gradient_noise(p) * (1.0 / 255.0) - (0.5 / 255.0);
+                }
+            ]]),
+}
+function Background:draw()
+    G.setShader(self.shader)
+    G.setColor(1, 1, 1)
+    G.draw(self.mesh)
+    G.setShader()
+end
+
+
+
+-- helper functions for updating and drawing
+local function update_all(t)
+    for _, e in ipairs(t) do e:update() end
+end
+local function update_alive(t)
+    -- update / delete actors
+    local j = 1
+    for i, e in ipairs(t) do
+        if e.alive then e:update() end
+        if e.alive then
+            t[j] = e
+            j = j + 1
+        end
+    end
+    for i = j, #t do
+        t[i] = nil
+    end
+end
+local function draw_all(t)
+    for _, e in ipairs(t) do e:draw() end
+end
+local function draw_alive_and_with_box(t)
+    for _, e in ipairs(t) do
+        if e.alive and e.box:overlaps(World.active_area) then e:draw() end
+    end
+end
+
 
 
 World = {}
@@ -16,10 +72,18 @@ function World:init()
     self.particles     = {}
 
     self.camera = Box(0, 0, W, H)
+
+    local ACTIVE_AREA_PADDING = 8
     self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
 
     -- loading the map will fill up actors and solids
     self.map = Map("assets/map.json")
+
+    for _, input in ipairs(Game.inputs) do
+        self:add_hero(input)
+    end
+    -- DEBUG: add second player
+    -- self:add_hero(Game.inputs[1])
 end
 
 
@@ -99,26 +163,6 @@ function World:move_y(box, amount)
     return solid
 end
 
-local function update_all(t)
-    -- update / delete actors
-    local j = 1
-    for i, e in ipairs(t) do
-        if e.alive then e:update() end
-        if e.alive then
-            t[j] = e
-            j = j + 1
-        end
-    end
-    for i = j, #t do
-        t[i] = nil
-    end
-end
-local function draw_all(t)
-    for _, e in ipairs(t) do
-        if e.alive and e.box:overlaps(World.active_area) then e:draw() end
-    end
-end
-
 function World:update_camera()
 
     local pad_x = W / 8
@@ -137,78 +181,70 @@ function World:update_camera()
     cx = clamp(cx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
     cy = clamp(cy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
 
-
     self.camera:set_center(cx, cy)
 
     -- for activating enemies
-    self.active_area.x = self.camera.x - ACTIVE_AREA_PADDING
-    self.active_area.y = self.camera.y - ACTIVE_AREA_PADDING
+    self.active_area:set_center(self.camera:get_center())
 end
 function World:update()
 
-    update_all(self.solids)
-    for _, h in ipairs(self.heroes) do h:update() end
+    update_alive(self.solids)
+    update_all(self.heroes)
     self:update_camera()
 
-    update_all(self.enemies)
-    update_all(self.hero_bullets)
-    update_all(self.enemy_bullets)
-    update_all(self.particles)
+    update_alive(self.enemies)
+    update_alive(self.hero_bullets)
+    update_alive(self.enemy_bullets)
+    update_alive(self.particles)
+
+
+    local gameover = true
+    for _, h in ipairs(self.heroes) do
+        if not h:is_gameover() then
+            gameover = false
+            break
+        end
+    end
+    if gameover then
+        Game:change_state("title")
+    end
 end
+
 function World:draw()
     G.push()
 
-    -- background
-    if not bg_mesh then
-        local color1 = { 0.1,  0.18,  0.25 }
-        local color2 = { 0.01, 0.08, 0.08 }
-        bg_mesh = G.newMesh({
-            { 0, 0, 0, 0, unpack(color1) },
-            { W, 0, 0, 0, unpack(color1) },
-            { W, H, 0, 0, unpack(color2) },
-            { 0, H, 0, 0, unpack(color2) },
-        })
-        bg_shader = G.newShader([[
-        float gradient_noise(in vec2 uv) {
-            return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
-        }
-        vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
-            return c + gradient_noise(p) * (1.0 / 255.0) - (0.5 / 255.0);
-        }
-        ]])
-    end
-    G.setShader(bg_shader)
-    G.setColor(1, 1, 1)
-    G.draw(bg_mesh)
-    G.setShader()
+    Background:draw()
 
     G.translate(-self.camera.x, -self.camera.y)
 
-
-    draw_all(self.solids)
-
-    draw_all(self.hero_bullets)
-    draw_all(self.enemy_bullets)
-
+    self.map:draw(1)
+    draw_alive_and_with_box(self.solids)
+    draw_alive_and_with_box(self.hero_bullets)
+    draw_alive_and_with_box(self.enemy_bullets)
     draw_all(self.heroes)
-    draw_all(self.enemies)
-
-    self.map:draw()
-
-    for _, e in ipairs(self.particles) do
-        if e.alive then e:draw() end
-    end
+    draw_alive_and_with_box(self.enemies)
+    self.map:draw(2)
+    draw_all(self.particles)
 
     G.pop()
 
     -- HUD
     for i, h in ipairs(self.heroes) do
-        for x = 1, MAX_HP do
+        local y = 4 + (i-1) * 6
+
+        G.setColor(1, 1, 1)
+        G.setFont(SMALL_FONT)
+        G.print(string.format("%02d", h.lives), 4, y - 1.2)
+
+
+        for j = 1, MAX_HP do
+            local x = 13 + (j - 1) * 4
+
             G.setColor(0.5, 0.5, 0.5, 0.5)
-            G.rectangle("fill", 4 + (x-1) * 4, 4 + (i-1) * 6, 3.5, 3.5)
-            if x <= h.hp then
+            G.rectangle("fill", x, y, 3.5, 3.5)
+            if j <= h.hp then
                 G.setColor(0.5, 0.8, 0.3, 0.5)
-                G.rectangle("fill", 4 + (x-1) * 4, 4 + (i-1) * 6, 3.5, 3.5)
+                G.rectangle("fill", x, y, 3.5, 3.5)
             end
         end
     end

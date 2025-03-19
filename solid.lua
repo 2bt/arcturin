@@ -11,9 +11,17 @@ function Solid:draw()
 end
 
 
-
-local CRATE_COLOR1 = { 0.25, 0.48, 0.19 }
-local CRATE_COLOR2 = { 0.12, 0.28, 0.17 }
+local CRATE_COLOR1 = { 0.4,  0.23, 0.17 }
+local CRATE_COLOR2 = { 0.4,  0.31, 0.2 }
+local CRATE_MESHES = {}
+do
+    local b = MeshBuilder()
+    b:polygon({0,160,40,160,40,130,60,110,140,80,160,80,160,0,120,0,120,30,100,50,20,80,0,80})
+    table.insert(CRATE_MESHES, b:build())
+    local b = MeshBuilder()
+    b:polygon({0,0,40,0,40,30,60,50,140,80,160,80,160,160,120,160,120,130,100,110,20,80,0,80})
+    table.insert(CRATE_MESHES, b:build())
+end
 Crate = Solid:new()
 function Crate:init(x, y)
     self.box = Box(x, y, TILE_SIZE, TILE_SIZE)
@@ -31,14 +39,18 @@ function Crate:hit(power)
     end
 end
 function Crate:draw()
-
-    local q = self.hp > 1 and 1 or 3
-    G.setColor(unpack(CRATE_COLOR1))
-    G.rectangle("fill", self.box.x,     self.box.y,     4, 4, q)
-    G.rectangle("fill", self.box.x + 4, self.box.y + 4, 4, 4, q)
-    G.setColor(unpack(CRATE_COLOR2))
-    G.rectangle("fill", self.box.x + 4, self.box.y,     4, 4, q)
-    G.rectangle("fill", self.box.x,     self.box.y + 4, 4, 4, q)
+    local q = (self.box.x + self.box.y) / 8 % 2
+    if q == 0 then
+        G.setColor(0.19, 0.15, 0.11)
+        G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
+        G.setColor(unpack(CRATE_COLOR1))
+        G.draw(CRATE_MESHES[1], self.box.x, self.box.y,  0, 1/20)
+    else
+        G.setColor(0.15, 0.13, 0.11)
+        G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
+        G.setColor(unpack(CRATE_COLOR2))
+        G.draw(CRATE_MESHES[2], self.box.x, self.box.y, 0, 1/20)
+    end
 end
 
 

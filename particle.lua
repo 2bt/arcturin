@@ -3,6 +3,8 @@ Particle = Object:new({
     ttl   = nil,
     tick  = 0,
 })
+function Particle:draw()
+end
 function Particle:update()
     if self.ttl then
         self.ttl = self.ttl - 1

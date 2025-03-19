@@ -1,6 +1,7 @@
 MeshBuilder = Object:new()
 function MeshBuilder:init()
     self.v = {}
+    self:color(1, 1, 1)
 end
 function MeshBuilder:color(r, g, b, a)
     self.r = r
@@ -236,11 +237,97 @@ local function voronoi(map, dist, x, y)
 end
 
 
-function generate_map_mesh(map)
+local Turtle = Object:new()
+function Turtle:init(x, y, a)
+    self.x = x
+    self.y = y
+    self.a = a or 0
+end
+function Turtle:transform_point(x, y)
+    local s = math.sin(self.a)
+    local c = math.cos(self.a)
+    return self.x + x * c + y * s, self.y + y * c - x * s
+end
+function Turtle:forward(v)
+    self.x, self.y = self:transform_point(0, -v)
+end
+function Turtle:turn(a)
+    self.a = self.a + a
+end
+
+
+function plant(b, x, y)
+
+
+    local DY = 1.7
+    local DP = 0.27
+    local XX = 6
+
+    local q = randf(0, math.pi * 2)
+    for j = 1, 3 do
+        q = q + math.pi * 2 / 3 + randf(-0.4, 0.4)
+
+        local p = q
+        local yy = y
+        for i = love.math.random(10, 40), 1, -1 do
+
+            local m = (3 - j) / 2
+            local color = mix({ 0.3, 0.6, 0.1 }, { 0.1, 0.3, 0.1 }, m)
+            color = mix(color, { 0.1, 0.1, 0.1 }, 0.5)
+            b:color(unpack(color))
+
+            local xx = x + math.sin(p) * XX
+            local x2 = x + math.sin(p + DP) * XX
+            local a = math.atan2(x2 - xx, -DY)
+
+            local t = Turtle(xx, yy, a)
+            local s = math.min(3, i)
+            local poly = {}
+            table.append(poly, t:transform_point(-s, s * 0.5))
+            table.append(poly, t:transform_point(0, -s * 0.5))
+            table.append(poly, t:transform_point(s,  s * 0.5))
+            table.append(poly, t:transform_point(0,  2))
+            b:polygon(poly)
+            p  = p + DP
+            yy = yy - DY
+        end
+    end
+
+end
+
+
+
+function generate_map_meshes(map)
     love.math.setRandomSeed(1337)
+
+    local meshes = {}
+
+    -- plants
     local b = MeshBuilder()
+    for y = 0, map.h - 1 do
+        for x = 0, map.w - 1 do
+            if  map:tile_at(x-1, y+1) == 1
+            and map:tile_at(x-1, y)   == 0
+            and map:tile_at(x-1, y-1) == 0
+            and map:tile_at(x,   y+1) == 1
+            and map:tile_at(x,   y)   == 0
+            and map:tile_at(x,   y-1) == 0
+            and map:tile_at(x+1, y+1) == 1
+            and map:tile_at(x+1, y)   == 0
+            and map:tile_at(x+1, y-1) == 0
+            and randf(0, 20) < 1
+            then
+                map.tile_data[x + map.w * y + 2] = -1
+                plant(b, x * 8 + 4, y * 8 + 8)
+            end
+        end
+    end
+    table.insert(meshes, b:build())
+
+
 
     -- background
+    local b = MeshBuilder()
     b:color(0.03, 0.03, 0.03)
     local function add_point(p, c, r)
         local q1 = map:tile_at(c-1, r-1) == 1
@@ -313,6 +400,8 @@ function generate_map_mesh(map)
             end
         end
     end
+    table.insert(meshes, b:build())
 
-    return b:build()
+
+    return meshes
 end

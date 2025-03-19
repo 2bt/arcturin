@@ -1,19 +1,3 @@
-require("helper")
-require("box")
-require("input")
-require("model")
-require("animation_manager")
-require("tween")
-
-require("particle")
-require("solid")
-require("hero")
-require("enemy")
-require("map")
-require("world")
-require("title")
-
-
 -- c64 colors
 COLORS = {
     { 0, 0, 0 },
@@ -34,8 +18,26 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
-local inputs     = { Keyboard() }
 
+require("helper")
+require("box")
+require("input")
+require("model")
+require("animation_manager")
+require("tween")
+require("meshgen")
+
+require("particle")
+require("solid")
+require("hero")
+require("enemy")
+require("map")
+require("world")
+require("title")
+
+
+
+local inputs     = { Keyboard() }
 local state      = "title"
 local next_state = nil
 local blend      = 0
@@ -46,7 +48,7 @@ Game = {
     inputs = inputs
 }
 function Game:init()
-    World:init()
+
 end
 
 function Game:add_joystick(j)
@@ -68,9 +70,6 @@ function Game:update()
 
     for _, input in ipairs(inputs) do
         input:update()
-        if not input.hero and not (input.start or input.a) then
-            World:add_hero(input)
-        end
     end
 
     -- state transition
@@ -80,6 +79,9 @@ function Game:update()
             if blend == 1 then
                 state = next_state
                 next_state = nil
+                if state == "playing" then
+                    World:init()
+                end
             end
         end
     elseif blend > 0 then
@@ -87,13 +89,12 @@ function Game:update()
     end
 
 
-    -- if blend == 0 then
-        if state == "title" then
-            Title:update()
-        elseif state == "playing" then
-            World:update()
-        end
-    -- end
+    if state == "title" then
+        Title:update()
+    elseif state == "playing" then
+        World:update()
+    end
+
 
 end
 
@@ -106,9 +107,6 @@ function Game:draw()
         World:draw()
     end
 
-    -- for i, input in ipairs(inputs) do
-    --     G.print(("%d %d"):format(input.state.dx, input.state.dy), 10, i * 20)
-    -- end
 
     G.setColor(0, 0, 0, blend)
     G.rectangle("fill", 0, 0, W, H)
