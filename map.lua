@@ -53,6 +53,16 @@ function Map:tile_at(x, y)
     if y < 0 or y >= self.h then return 1 end
     return self.tile_data[y * self.w + x + 1]
 end
+
+function Map:tile_at_world_pos(x, y)
+    x = math.floor(x / TILE_SIZE)
+    y = math.floor(y / TILE_SIZE)
+    if x < 0 or x >= self.w then return 1 end
+    if y < 0 or y >= self.h then return 1 end
+    return self.tile_data[y * self.w + x + 1]
+end
+
+
 function Map:collision(box, axis)
     local x1 = math.floor(box.x / TILE_SIZE)
     local x2 = math.floor(box:right() / TILE_SIZE)

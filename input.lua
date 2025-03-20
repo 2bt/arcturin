@@ -35,8 +35,6 @@ end
 
 
 Keyboard = Input:new()
-function Keyboard:init()
-end
 function Keyboard:update()
     self:set_state({
         left  = love.keyboard.isDown("left"),
@@ -47,5 +45,20 @@ function Keyboard:update()
         b     = love.keyboard.isDown("c"),
         start = love.keyboard.isDown("return"),
         back  = love.keyboard.isDown("escape"),
+    })
+end
+
+
+Keyboard2 = Input:new()
+function Keyboard2:update()
+    self:set_state({
+        left  = love.keyboard.isDown("j"),
+        right = love.keyboard.isDown("l"),
+        up    = love.keyboard.isDown("i"),
+        down  = love.keyboard.isDown("k"),
+        a     = love.keyboard.isDown("g"),
+        b     = love.keyboard.isDown("h"),
+        start = love.keyboard.isDown("t"),
+        back  = love.keyboard.isDown("y"),
     })
 end

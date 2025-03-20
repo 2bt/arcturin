@@ -16,21 +16,31 @@ function love.update()
 end
 
 
+Transform = love.math.newTransform()
+
+
 function love.draw()
+    Transform:reset()
+
     local w = G.getWidth()
     local h = G.getHeight()
     if w / h < W / H then
         local f = w / W * H
         G.setScissor(0, (h - f) * 0.5, w, f)
-        G.translate(0, (h - f) * 0.5)
-        G.scale(w / W)
+        -- G.translate(0, (h - f) * 0.5)
+        -- G.scale(w / W)
+        Transform:translate(0, (h - f) * 0.5)
+        Transform:scale(w / W)
     else
         local f = h / H * W
         G.setScissor((w - f) * 0.5, 0, f, h)
-        G.translate((w - f) * 0.5, 0)
-        G.scale(h / H)
+        -- G.translate((w - f) * 0.5, 0)
+        -- G.scale(h / H)
+        Transform:translate((w - f) * 0.5, 0)
+        Transform:scale(h / H)
     end
 
+    G.replaceTransform(Transform)
     Game:draw()
     G.setScissor()
 end

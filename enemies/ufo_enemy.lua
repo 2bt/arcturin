@@ -32,15 +32,14 @@ function UfoEnemy:sub_update()
     end
 
 
-    local lt = self.anim_manager:update()
-    self.gt = MODEL:get_global_transform(lt)
+    self.anim_manager:update()
 end
 function UfoEnemy:draw()
 
     G.push()
     G.translate(self.box:get_center())
     G.scale(0.05)
-    MODEL:draw(self.gt)
+    MODEL:draw(self.anim_manager.gt)
     G.pop()
 
     -- G.setColor(1, 0, 0, 0.4)

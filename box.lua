@@ -51,3 +51,25 @@ function Box:overlap_y(other)
     local d2 = other.y - self:bottom()
     return math.abs(d1) < math.abs(d2) and d1 or d2
 end
+
+function Box:intersection(other)
+    local x1 = math.max(self.x, other.x)
+    local y1 = math.max(self.y, other.y)
+    local x2 = math.min(self.x + self.w, other.x + other.w)
+    local y2 = math.min(self.y + self.h, other.y + other.h)
+
+    if x2 < x1 or y2 < y1 then
+        -- no overlap
+        return nil
+    end
+    return Box(x1, y1, x2 - x1, y2 - y1)
+end
+
+function Box:grow_to_fit(x, y)
+    local r = math.max(self.x + self.w, x)
+    local b = math.max(self.y + self.h, y)
+    self.x = math.min(self.x, x)
+    self.y = math.min(self.y, y)
+    self.w = r - self.x
+    self.h = b - self.y
+end

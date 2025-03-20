@@ -55,9 +55,7 @@ function WalkerEnemy:sub_update()
     end
 
 
-    local lt = self.anim_manager:update()
-    self.gt = MODEL:get_global_transform(lt)
-
+    self.anim_manager:update()
 end
 function WalkerEnemy:draw()
     -- G.setColor(unpack(COLORS[8]))
@@ -67,7 +65,7 @@ function WalkerEnemy:draw()
     G.translate(self.box:center_x(), self.box:bottom())
     G.scale(self.dir, 1)
     G.scale(0.06)
-    MODEL:draw(self.gt)
+    MODEL:draw(self.anim_manager.gt)
     G.pop()
 
 end

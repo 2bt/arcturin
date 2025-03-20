@@ -6,28 +6,30 @@ TILE_SIZE = 8
 SMALL_FONT = G.newFont("foobar/fonts/Hack-Regular.ttf", 5, "normal", 4)
 
 
-local color1 = { 0.1,  0.18,  0.25 }
-local color2 = { 0.01, 0.08, 0.08 }
-local Background = {
-    mesh = G.newMesh({
-        { 0, 0, 0, 0, unpack(color1) },
-        { W, 0, 0, 0, unpack(color1) },
-        { W, H, 0, 0, unpack(color2) },
-        { 0, H, 0, 0, unpack(color2) },
-    }),
-    shader = G.newShader([[
-        float gradient_noise(in vec2 uv) {
-            return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
-            }
-            vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
-                return c + gradient_noise(p) * (1.0 / 255.0) - (0.5 / 255.0);
-                }
-            ]]),
+
+local BACKGROUND_SHADER = G.newShader([[
+float gradient_noise(in vec2 uv) {
+    return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
 }
-function Background:draw()
-    G.setShader(self.shader)
+vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
+    return c + gradient_noise(p) * (1.0 / 255.0) - (0.5 / 255.0);
+}
+]])
+local BACKGROUND_MESH
+do
+    local c1 = { 0.1,  0.18, 0.25 }
+    local c2 = { 0.01, 0.08, 0.08 }
+    BACKGROUND_MESH = G.newMesh({
+        { 0, 0, 0, 0, unpack(c1) },
+        { W, 0, 0, 0, unpack(c1) },
+        { W, H, 0, 0, unpack(c2) },
+        { 0, H, 0, 0, unpack(c2) },
+    })
+end
+local function draw_background()
     G.setColor(1, 1, 1)
-    G.draw(self.mesh)
+    G.setShader(BACKGROUND_SHADER)
+    G.draw(BACKGROUND_MESH)
     G.setShader()
 end
 
@@ -71,7 +73,6 @@ function World:init()
     self.enemy_bullets = {}
     self.particles     = {}
 
-    self.camera = Box(0, 0, W, H)
 
     local ACTIVE_AREA_PADDING = 8
     self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
@@ -84,6 +85,22 @@ function World:init()
     end
     -- DEBUG: add second player
     -- self:add_hero(Game.inputs[1])
+
+
+    -- init camera
+    local hero_box
+    for i, h in ipairs(self.heroes) do
+        local hx = h.box:center_x()
+        local hy = h.box:bottom() - 12
+        if i == 1 then
+            hero_box = Box(hx, hy, 0, 0)
+        else
+            hero_box:grow_to_fit(hx, hy)
+        end
+    end
+    self.camera = Box(0, 0, W, H)
+    self.camera:set_center(hero_box:get_center())
+
 end
 
 
@@ -91,8 +108,6 @@ function World:add_hero(input)
     local index = #self.heroes + 1
     local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
     self.heroes[index] = hero
-
-    self.camera:set_center(hero.box:get_center())
 end
 
 function World:add_solid(solid)         table.insert(self.solids, solid)         end
@@ -164,24 +179,48 @@ function World:move_y(box, amount)
 end
 
 function World:update_camera()
+    local hero_box
+    for i, h in ipairs(self.heroes) do
+        if not h:is_gameover() then
+            local hx = h.box:center_x()
+            local hy = h.box:bottom() - 12
+            if not hero_box then
+                hero_box = Box(hx, hy, 0, 0)
+            else
+                hero_box:grow_to_fit(hx, hy)
+            end
+        end
+    end
+    if not hero_box then return end
+    local hx, hy = hero_box:get_center()
 
-    local pad_x = W / 8
-    local pad_y = H / 8
-    local cx, cy = self.camera:get_center()
+    local ox, oy = self.camera:get_center()
 
-    local hero = self.heroes[#self.heroes]
-    local hx = hero.box:center_x()
-    local hy = hero.box:bottom() - 12
+    local nx = hx
+    local ny = hy
+    local PAD_X = W / 10
+    local PAD_Y = H / 10
+    if hero_box.w <= PAD_X * 2 then
+        nx = clamp(ox, hero_box:right() - PAD_X, hero_box.x + PAD_X)
+    end
+    if hero_box.h <= PAD_Y * 2 then
+        ny = clamp(oy, hero_box:bottom() - PAD_Y, hero_box.y + PAD_Y)
+    end
+
+    -- fast scroll to new position
+    nx = mix(ox, nx, 0.1)
+    ny = mix(oy, ny, 0.1)
 
 
-    cx = clamp(cx, hx - pad_x, hx + pad_x)
-    cy = clamp(cy, hy - pad_y, hy + pad_y)
+    -- slowly scroll to center of heroes
+    nx = mix(nx, hx, 0.008)
+    ny = mix(ny, hy, 0.01)
 
-    -- don't go outside of map
-    cx = clamp(cx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
-    cy = clamp(cy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
+    -- stay inside of map
+    nx = clamp(nx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
+    ny = clamp(ny, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
 
-    self.camera:set_center(cx, cy)
+    self.camera:set_center(nx, ny)
 
     -- for activating enemies
     self.active_area:set_center(self.camera:get_center())
@@ -213,7 +252,7 @@ end
 function World:draw()
     G.push()
 
-    Background:draw()
+    draw_background()
 
     G.translate(-self.camera.x, -self.camera.y)
 

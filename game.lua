@@ -37,7 +37,10 @@ require("title")
 
 
 
-local inputs     = { Keyboard() }
+local inputs = {
+    Keyboard(),
+    -- Keyboard2(), -- DEBUG
+}
 local state      = "title"
 local next_state = nil
 local blend      = 0
@@ -50,7 +53,6 @@ Game = {
 function Game:init()
 
 end
-
 function Game:add_joystick(j)
     table.insert(inputs, Joystick(j))
 end

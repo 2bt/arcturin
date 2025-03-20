@@ -91,5 +91,6 @@ function AnimationManager:update()
         self.blend = math.max(0, self.blend - self.blend_speed)
         lerp_transform(self.lt, lt2, self.blend)
     end
-    return self.lt
+
+    self.gt = self.model:get_global_transform(self.lt)
 end
