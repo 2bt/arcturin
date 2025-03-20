@@ -300,9 +300,9 @@ function Hero:update()
             if self.dead_counter == 0 and self.lives > 0 then
                 -- respawn
                 self.lives = self.lives - 1
-                self.hp = MAX_HP
-                self.vx = 0
-                self.vy = 0
+                self.hp    = MAX_HP
+                self.vx    = 0
+                self.vy    = 0
                 self.box.x = self.respawn_x
                 self.box.y = self.respawn_y
                 self.invincible_counter = 90
@@ -313,15 +313,6 @@ function Hero:update()
     end
 
 
-
-    local function stay_inside_camera_view()
-        if self.box.x < World.camera.x then
-            self.box.x = World.camera.x
-        end
-        if self.box:right() > World.camera:right() then
-            self.box.x = World.camera:right() - self.box.w
-        end
-    end
 
 
     if self.state == STATE_SPAWN then
@@ -367,8 +358,6 @@ function Hero:update()
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
         World:move_x(self.box, self.vx)
 
-        stay_inside_camera_view()
-
         -- jump
         if jump and not self.prev_jump then
             self.vy           = -JUMP_HEIGHT
@@ -400,8 +389,6 @@ function Hero:update()
         local acc = ACCEL_AIR
         self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
         World:move_x(self.box, self.vx)
-
-        stay_inside_camera_view()
 
         if self.jump_control then
             if not jump and self.vy < -1 then
@@ -460,9 +447,8 @@ function Hero:update()
     end
 
 
+    -- move vertically
     do
-        self.solid_ground = nil
-        -- move vertically
         -- gravity
         self.vy = self.vy + GRAVITY
         local falling_fast = self.vy > 4.8
@@ -472,7 +458,6 @@ function Hero:update()
         if s then
             if vy > 0 then
                 in_air = false
-                self.solid_ground = s
             end
             self.vy = 0
         end
@@ -487,6 +472,27 @@ function Hero:update()
 
         elseif self.state ~= STATE_IN_AIR and in_air then
             self:set_state(STATE_IN_AIR)
+        end
+    end
+
+
+    -- stay inside camera view
+    if self.box.x < World.camera.x then
+        self.box.x = World.camera.x
+    end
+    if self.box:right() > World.camera:right() then
+        self.box.x = World.camera:right() - self.box.w
+    end
+    if #World.heroes > 1 and self.box.y > World.camera:bottom() + 5 then
+        local top_h = self
+        for _, h in ipairs(World.heroes) do
+            if h.state ~= STATE_DEAD and h.box.y < top_h.box.y then
+               top_h = h
+            end
+        end
+        if top_h then
+            self.box.x = top_h.box.x
+            self.box.y = top_h.box.y
         end
     end
 

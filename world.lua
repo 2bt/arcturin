@@ -80,11 +80,12 @@ function World:init()
     -- loading the map will fill up actors and solids
     self.map = Map("assets/map.json")
 
+    -- add heroes
     for _, input in ipairs(Game.inputs) do
-        self:add_hero(input)
+        local index = #self.heroes + 1
+        local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
+        self.heroes[index] = hero
     end
-    -- DEBUG: add second player
-    -- self:add_hero(Game.inputs[1])
 
 
     -- init camera
@@ -103,12 +104,6 @@ function World:init()
 
 end
 
-
-function World:add_hero(input)
-    local index = #self.heroes + 1
-    local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
-    self.heroes[index] = hero
-end
 
 function World:add_solid(solid)         table.insert(self.solids, solid)         end
 function World:add_hero_bullet(bullet)  table.insert(self.hero_bullets, bullet)  end
@@ -179,11 +174,16 @@ function World:move_y(box, amount)
 end
 
 function World:update_camera()
+    local ox, oy = self.camera:get_center()
+
     local hero_box
     for i, h in ipairs(self.heroes) do
         if not h:is_gameover() then
             local hx = h.box:center_x()
             local hy = h.box:bottom() - 12
+            if hy > oy then
+                hy = oy + (hy - oy) * 0.9
+            end
             if not hero_box then
                 hero_box = Box(hx, hy, 0, 0)
             else
@@ -194,7 +194,6 @@ function World:update_camera()
     if not hero_box then return end
     local hx, hy = hero_box:get_center()
 
-    local ox, oy = self.camera:get_center()
 
     local nx = hx
     local ny = hy
@@ -225,6 +224,8 @@ function World:update_camera()
     -- for activating enemies
     self.active_area:set_center(self.camera:get_center())
 end
+
+
 function World:update()
 
     update_alive(self.solids)
