@@ -24,15 +24,11 @@ function love.draw()
     if w / h < W / H then
         local f = w / W * H
         G.setScissor(0, (h - f) * 0.5, w, f)
-        -- G.translate(0, (h - f) * 0.5)
-        -- G.scale(w / W)
         Transform:translate(0, (h - f) * 0.5)
         Transform:scale(w / W)
     else
         local f = h / H * W
         G.setScissor((w - f) * 0.5, 0, f, h)
-        -- G.translate((w - f) * 0.5, 0)
-        -- G.scale(h / H)
         Transform:translate((w - f) * 0.5, 0)
         Transform:scale(h / H)
     end
@@ -41,8 +37,6 @@ function love.draw()
     Game:draw()
     G.setScissor()
 end
-
-
 function love.keypressed(k)
     if k == "p" then
         local screenshot = love.graphics.newScreenshot()
@@ -51,8 +45,6 @@ function love.keypressed(k)
         love.event.quit()
     end
 end
-
-
 function love.joystickadded(j)
     Game:add_joystick(j)
 end

@@ -3,8 +3,7 @@ MAX_VY    = 3
 TILE_SIZE = 8
 
 
-SMALL_FONT = G.newFont("foobar/fonts/Hack-Regular.ttf", 5, "normal", 4)
-
+SMALL_FONT = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
 
 
 local BACKGROUND_SHADER = G.newShader([[
@@ -273,7 +272,7 @@ function World:draw()
     for i, h in ipairs(self.heroes) do
         local y = 4 + (i-1) * 6
 
-        G.setColor(1, 1, 1)
+        G.setColor(0.8, 0.8, 0.8, 0.8)
         G.setFont(SMALL_FONT)
         G.print(string.format("%02d", h.lives), 4, y - 1.2)
 
