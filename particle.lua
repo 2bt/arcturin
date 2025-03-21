@@ -5,6 +5,8 @@ Particle = Object:new({
 })
 function Particle:draw()
 end
+function Particle:sub_update()
+end
 function Particle:update()
     if self.ttl then
         self.ttl = self.ttl - 1
@@ -14,7 +16,7 @@ function Particle:update()
         end
     end
     self.tick = self.tick + 1
-    if self.sub_update then self:sub_update() end
+    self:sub_update()
 end
 
 

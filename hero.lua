@@ -137,6 +137,36 @@ function AimShot:draw()
     -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
 end
 
+local TWINKLE_MESH = G.newMesh({
+    {  0,  0, 0, 0, 1, 1, 1, 0.8 },
+    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
+    {  0, -3, 0, 0, 1, 1, 1, 0.2 },
+    {  1, -1, 0, 0, 1, 1, 1, 0.2 },
+    {  3,  0, 0, 0, 1, 1, 1, 0.2 },
+    {  1,  1, 0, 0, 1, 1, 1, 0.2 },
+    {  0,  3, 0, 0, 1, 1, 1, 0.2 },
+    { -1,  1, 0, 0, 1, 1, 1, 0.2 },
+    { -3,  0, 0, 0, 1, 1, 1, 0.2 },
+    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
+})
+local TwinkleParticle = Particle:new()
+function TwinkleParticle:init(x, y)
+    self.x = x
+    self.y = y
+    self.size = Tween(0):tween(0.5, 2):tween(0, 8)
+end
+function TwinkleParticle:sub_update()
+    self.size:update()
+    self.alive = not self.size:is_done()
+end
+function TwinkleParticle:draw()
+    G.setColor(1, 1, 1)
+    G.push()
+    G.translate(self.x, self.y)
+    G.scale(self.size.value)
+    G.draw(TWINKLE_MESH)
+    G.pop()
+end
 
 
 local HeroExplosion = Particle:new({
@@ -313,20 +343,17 @@ function Hero:update()
     end
 
 
-
-
     if self.state == STATE_SPAWN then
         self.spawn_counter = self.spawn_counter - 1
         if self.spawn_counter > 0 then
 
             -- particles
-            local o = math.min(0, (1 - self.spawn_counter / 40) * -25)
+            local o = math.min(0, (1 - (self.spawn_counter - 1) / 40) * -25.5)
             local y = self.box:bottom() + o
-            for _ = 1, 4 do
+            for _ = 1, 3 do
                 local x = self.box.x + randf(-2, self.box.w + 2)
                 local y = y + randf(-0.5, 0.5)
-                local r = randf(0.5, 2)
-                World:add_particle(FlashParticle(x, y, r))
+                World:add_particle(TwinkleParticle(x, y))
             end
 
             return
@@ -511,8 +538,7 @@ function Hero:update()
         for _ = 1, 4 do
             local x = self.box.x + randf(-2, self.box.w + 2)
             local y = self.box.y + randf(-3, self.box.h + 1)
-            local r = randf(0.5, 1.5)
-            World:add_particle(FlashParticle(x, y, r))
+            World:add_particle(TwinkleParticle(x, y))
         end
 
     else
@@ -595,7 +621,7 @@ function Hero:draw()
         t:translate(-World.camera.x, -World.camera.y)
         t:translate(self.box:center_x(), self.box:bottom())
         HERO_SPAWN_SHADER:send("transform", { t:inverse():getMatrix() })
-        local o = math.min(0, (1 - self.spawn_counter / 40) * -25)
+        local o = math.min(0, (1 - self.spawn_counter / 40) * -25.5)
         HERO_SPAWN_SHADER:send("spawn", o)
         G.setShader(HERO_SPAWN_SHADER)
     end

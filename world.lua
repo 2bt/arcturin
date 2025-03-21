@@ -206,18 +206,19 @@ function World:update_camera()
         ny = clamp(oy, hero_box:bottom() - PAD_Y, hero_box.y + PAD_Y)
     end
 
+    -- stay inside of map
+    nx = clamp(nx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
+    ny = clamp(ny, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
+    hx = clamp(hx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
+    hy = clamp(hy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
+
     -- fast scroll to new position
     nx = mix(ox, nx, 0.1)
     ny = mix(oy, ny, 0.1)
 
-
     -- slowly scroll to center of heroes
     nx = mix(nx, hx, 0.008)
     ny = mix(ny, hy, 0.01)
-
-    -- stay inside of map
-    nx = clamp(nx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
-    ny = clamp(ny, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
 
     self.camera:set_center(nx, ny)
 
