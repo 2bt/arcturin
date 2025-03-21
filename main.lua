@@ -1,4 +1,7 @@
 G = love.graphics
+random = love.math.random
+Transform = love.math.newTransform()
+
 W = 320
 H = 180
 
@@ -10,15 +13,9 @@ function love.load()
     love.mouse.setVisible(false)
     Game:init()
 end
-
 function love.update()
     Game:update()
 end
-
-
-Transform = love.math.newTransform()
-
-
 function love.draw()
     Transform:reset()
 

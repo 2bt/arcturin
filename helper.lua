@@ -29,7 +29,7 @@ function distance(ax, ay, bx, by)
     return length(bx - ax, by - ay)
 end
 
-local random = love.math.random
+
 function randf(min, max)
     return min + random() * (max - min)
 end

@@ -37,6 +37,10 @@ function Tween:tween(final_value, frames)
     })
     return self
 end
+function Tween:kill_when_done(entity)
+    self.entity_to_kill = entity
+    return self
+end
 function Tween:is_done()
     return #self.data == 0
 end
@@ -58,10 +62,12 @@ function Tween:update()
     self.value = mix(self.start_value, d.final_value, x)
 
     if self.frame >= d.frames then
-        -- self.frame = self.frame - d.frames
         self.frame = 0
         self.start_value = d.final_value
         table.remove(self.data, 1)
+        if self.entity_to_kill and #self.data == 0 then
+            self.entity_to_kill.alive = false
+        end
     end
     return self.value
 end

@@ -153,11 +153,10 @@ local TwinkleParticle = Particle:new()
 function TwinkleParticle:init(x, y)
     self.x = x
     self.y = y
-    self.size = Tween(0):tween(0.5, 2):tween(0, 8)
+    self.size = Tween(0):tween(0.5, 2):tween(0, 8):kill_when_done(self)
 end
 function TwinkleParticle:sub_update()
     self.size:update()
-    self.alive = not self.size:is_done()
 end
 function TwinkleParticle:draw()
     G.setColor(1, 1, 1)

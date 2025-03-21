@@ -269,7 +269,7 @@ function plant(b, x, y)
 
         local p = q
         local yy = y
-        for i = love.math.random(10, 40), 1, -1 do
+        for i = random(10, 40), 1, -1 do
 
             local m = (3 - j) / 2
             local color = mix({ 0.3, 0.6, 0.1 }, { 0.1, 0.3, 0.1 }, m)

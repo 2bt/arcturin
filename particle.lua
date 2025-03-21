@@ -45,7 +45,7 @@ function SparkParticle:init(x, y)
     self.box = Box(x-1, y-1, 2, 2)
     self.vx  = randf(-3, 3)
     self.vy  = randf(-3, 3)
-    self.ttl = love.math.random(3, 7)
+    self.ttl = random(3, 7)
 end
 function SparkParticle:sub_update()
     self.vx = self.vx * 0.97
@@ -81,17 +81,12 @@ function DustParticle:init(x, y, a)
     self.vx = math.sin(a) * v
     self.vy = math.cos(a) * v
 
-    self.r = 0
-    self.r_tween = Tween(0):tween(randf(4, 6), randf(1, 15))
-    self.r_tween:set_ease(Tween.EASE_OUT):set_trans(Tween.TRANS_QUAD):tween(0, randf(15, 25))
+    self.r = Tween(0):tween(randf(4, 6), randf(1, 15))
+    self.r:set_ease(Tween.EASE_OUT):set_trans(Tween.TRANS_QUAD):tween(0, randf(15, 25)):kill_when_done(self)
 
 end
 function DustParticle:sub_update()
-    self.r = self.r_tween:update()
-    if self.r_tween:is_done() then
-        self.alive = false
-    end
-
+    self.r:update()
     self.vx = self.vx * 0.93
     self.vy = self.vy * 0.93
     self.x  = self.x + self.vx
@@ -99,7 +94,7 @@ function DustParticle:sub_update()
 end
 function DustParticle:draw()
     G.setColor(0.35, 0.35, 0.35, 0.6)
-    G.circle("fill", self.x, self.y, self.r)
+    G.circle("fill", self.x, self.y, self.r.value)
 end
 
 
@@ -122,9 +117,9 @@ function DebrisParticle:init(x, y)
     self.a   = randf(0, 2 * math.pi)
     self.va  = randf(-0.5, 0.5)
 
-    self.poly = DebrisParticle.POLYS[love.math.random(1, #DebrisParticle.POLYS)]
+    self.poly = DebrisParticle.POLYS[random(1, #DebrisParticle.POLYS)]
 
-    self.ttl = love.math.random(70, 100)
+    self.ttl = random(70, 100)
 end
 function DebrisParticle:sub_update()
 

@@ -60,8 +60,8 @@ function CrateParticle:init(x, y)
     self.box   = Box(x - self.r, y - self.r, self.r, self.r)
     self.vx    = randf(-1.5, 1.5)
     self.vy    = randf(-2.0, 1.0)
-    self.ttl   = love.math.random(10, 40)
-    self.color = love.math.random(1, 2) == 1 and CRATE_COLOR1 or CRATE_COLOR2
+    self.ttl   = random(10, 40)
+    self.color = random(1, 2) == 1 and CRATE_COLOR1 or CRATE_COLOR2
 end
 function CrateParticle:sub_update()
 
