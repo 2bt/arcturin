@@ -1,5 +1,14 @@
 local json = require("dkjson")
 
+TILE_SIZE = 8
+
+TILE_TYPE_EMPTY = 0
+TILE_TYPE_ROCK  = 1
+TILE_TYPE_COMB  = 2
+TILE_TYPE_STONE = 3
+
+
+
 local ENEMY_MAP = {
     ["ufo"]    = UfoEnemy,
     ["walker"] = WalkerEnemy,
@@ -35,12 +44,14 @@ function Map:init(name)
         end
     end
 
+
+    -- convert comb tiles to comb solids
     local i = 1
     for y = 0, self.h - 1 do
         for x = 0, self.w - 1 do
-            if self.tile_data[i] == 2 then
-                self.tile_data[i] = 0
-                World:add_solid(Crate(x * TILE_SIZE, y * TILE_SIZE))
+            if self.tile_data[i] == TILE_TYPE_COMB then
+                self.tile_data[i] = TILE_TYPE_EMPTY
+                World:add_solid(CombSolid(x * TILE_SIZE, y * TILE_SIZE))
             end
             i = i + 1
         end

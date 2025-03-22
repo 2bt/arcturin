@@ -34,6 +34,8 @@ function MeshBuilder:build()
 end
 
 
+
+
 -- Felzenszwalb & Huttenlocher algorithm
 local function get_distances(map)
     local rows = map.h
@@ -44,8 +46,8 @@ local function get_distances(map)
     for i = 1, rows do
         dist[i] = {}
         for j = 1, cols do
-            if map:tile_at(j - 1, i - 1) == 0 then
-                dist[i][j] = 0
+            if map:tile_at(j - 1, i - 1) == TILE_TYPE_EMPTY then
+                    dist[i][j] = 0
             else
                 dist[i][j] = INF
             end
@@ -137,6 +139,8 @@ local function normalize(v)
     return scale(v, 1 / length(v))
 end
 
+local noise = love.math.noise
+
 
 local function clip_polygon(poly, mid, normal)
     local new_poly = {}
@@ -166,10 +170,9 @@ local function clip_polygon(poly, mid, normal)
     return new_poly
 end
 
-local noise = love.math.noise
 
 
-local function voronoi(map, dist, x, y)
+local function voronoi(map, x, y)
     local pad = 8
     local poly = {
         { x * 8 - pad,     y * 8 - pad },
@@ -187,7 +190,7 @@ local function voronoi(map, dist, x, y)
     end
 
     local c = point(x, y)
-    local distance = dist[x + y * map.w + 1] or 0
+    local distance = map.distances[x + y * map.w + 1] or 0
 
     for oy = -1, 1 do
         for ox = -1, 1 do
@@ -256,8 +259,7 @@ function Turtle:turn(a)
 end
 
 
-function plant(b, x, y)
-
+local function plant(b, x, y)
 
     local DY = 1.7
     local DP = 0.27
@@ -292,29 +294,19 @@ function plant(b, x, y)
             yy = yy - DY
         end
     end
-
 end
-
-
-
-function generate_map_meshes(map)
-    love.math.setRandomSeed(1337)
-
-    local meshes = {}
-
-    -- plants
-    local b = MeshBuilder()
+local function generate_plants(map, b)
     for y = 0, map.h - 1 do
         for x = 0, map.w - 1 do
-            if  map:tile_at(x-1, y+1) == 1
-            and map:tile_at(x-1, y)   == 0
-            and map:tile_at(x-1, y-1) == 0
-            and map:tile_at(x,   y+1) == 1
-            and map:tile_at(x,   y)   == 0
-            and map:tile_at(x,   y-1) == 0
-            and map:tile_at(x+1, y+1) == 1
-            and map:tile_at(x+1, y)   == 0
-            and map:tile_at(x+1, y-1) == 0
+            if  map:tile_at(x-1, y+1) ~= TILE_TYPE_EMPTY
+            and map:tile_at(x+0, y+1) ~= TILE_TYPE_EMPTY
+            and map:tile_at(x+1, y+1) ~= TILE_TYPE_EMPTY
+            and map:tile_at(x-1, y+0) == TILE_TYPE_EMPTY
+            and map:tile_at(x+0, y+0) == TILE_TYPE_EMPTY
+            and map:tile_at(x+1, y+0) == TILE_TYPE_EMPTY
+            and map:tile_at(x-1, y-1) == TILE_TYPE_EMPTY
+            and map:tile_at(x+0, y-1) == TILE_TYPE_EMPTY
+            and map:tile_at(x+1, y-1) == TILE_TYPE_EMPTY
             and randf(0, 20) < 1
             then
                 map.tile_data[x + map.w * y + 2] = -1
@@ -322,18 +314,23 @@ function generate_map_meshes(map)
             end
         end
     end
-    table.insert(meshes, b:build())
+end
 
 
+
+local function generate_rocks(map, b)
 
     -- background
-    local b = MeshBuilder()
     b:color(0.03, 0.03, 0.03)
     local function add_point(p, c, r)
-        local q1 = map:tile_at(c-1, r-1) == 1
-        local q2 = map:tile_at(c,   r-1) == 1
-        local q3 = map:tile_at(c-1, r)   == 1
-        local q4 = map:tile_at(c,   r)   == 1
+        -- local q1 = map:tile_at(c-1, r-1) == TILE_TYPE_ROCK
+        -- local q2 = map:tile_at(c,   r-1) == TILE_TYPE_ROCK
+        -- local q3 = map:tile_at(c-1, r)   == TILE_TYPE_ROCK
+        -- local q4 = map:tile_at(c,   r)   == TILE_TYPE_ROCK
+        local q1 = map:tile_at(c-1, r-1) ~= TILE_TYPE_EMPTY
+        local q2 = map:tile_at(c,   r-1) ~= TILE_TYPE_EMPTY
+        local q3 = map:tile_at(c-1, r)   ~= TILE_TYPE_EMPTY
+        local q4 = map:tile_at(c,   r)   ~= TILE_TYPE_EMPTY
         local x = c * 8
         local y = r * 8
         local pad = 0.25
@@ -353,13 +350,13 @@ function generate_map_meshes(map)
             x = x + pad
             y = y + pad
         end
-        p[#p+1] = x + mix(-1, 1, noise(x*0.57, y*0.57, 0.0))
-        p[#p+1] = y + mix(-1, 1, noise(x*0.57, y*0.57, 13.69))
+        p[#p+1] = x --+ mix(-1, 1, noise(x*0.57, y*0.57, 0.0))
+        p[#p+1] = y --+ mix(-1, 1, noise(x*0.57, y*0.57, 13.69))
     end
 
     for r = 0, map.h - 1 do
         for c = 0, map.w - 1 do
-            if map:tile_at(c, r) == 1 then
+            if map:tile_at(c, r) == TILE_TYPE_ROCK then
                 local p = {}
                 add_point(p, c,   r)
                 add_point(p, c+1, r)
@@ -371,12 +368,11 @@ function generate_map_meshes(map)
     end
 
 
-    -- stones
-    local dist = get_distances(map)
+    -- rocks
     for y = 0, map.h - 1 do
         for x = 0, map.w - 1 do
-            if map:tile_at(x, y) == 1 then
-                local d = dist[x + y * map.w + 1]
+            if map:tile_at(x, y) == TILE_TYPE_ROCK then
+                local d = map.distances[x + y * map.w + 1]
                 local r = randf(0.9, d)
                 local f = (r < 1 and 0.7
                         or r < 3 and 0.4
@@ -384,24 +380,199 @@ function generate_map_meshes(map)
                         or           0)
 
                 if f > 0 then
-
                     local r = randf(0, 10)
-
                     local c = COLORS[r < 4 and 3 or 9]
                     local g = 0.02
                     local c = mix({ g, g, g }, c, f)
                     b:color(unpack(c))
-
-
-                    local poly = voronoi(map, dist, x, y)
+                    local poly = voronoi(map, x, y)
                     if #poly > 6 then b:polygon(poly) end
                 end
-
             end
         end
     end
-    table.insert(meshes, b:build())
+end
 
 
-    return meshes
+local function shuffle(t)
+    for i = #t, 2, -1 do
+        local j = random(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+local color1 = {0.6, 0.6, 0.47}
+local color1 = mix({0, 0, 0}, color1, 0.6)
+local color2 = mix({0, 0, 0}, {0.6, 0.4, 0.41}, 0.5)
+local color2 = mix({0.2, 0.2, 0.2}, color2, 0.6)
+local color3 = mix({0, 0, 0}, {0.5, 0.45, 0.4}, 0.2)
+
+local function stone(b, box, dist)
+
+    local color1 = color1
+    local color2 = color2
+    local color3 = color3
+
+    if random(3) == 1 then
+        local m = randf(0, 0.3)
+        color1 = mix(color1, {0.2, 0.1, 0.1}, m)
+        color2 = mix(color2, {0.2, 0.1, 0.1}, m)
+        color3 = mix(color3, {0.2, 0.1, 0.1}, m)
+
+    end
+
+    local m = randf(0, 0.3) + math.min(dist * 0.08, 0.4)
+    local color1 = mix(color1, {0, 0, 0}, m)
+    local color2 = mix(color2, {0, 0, 0}, m)
+    local color3 = mix(color3, {0, 0, 0}, m)
+
+
+    local x1 = box.x
+    local y1 = box.y
+    local x2 = box:right()
+    local y2 = box:bottom()
+
+
+    local inner = {
+        x1 + randf(1,3), y1 + randf(1,3),
+        x2 - randf(1,3), y1 + randf(1,3),
+        x2 - randf(1,3), y2 - randf(1,3),
+        x1 + randf(1,3), y2 - randf(1,3),
+    }
+
+
+    b:color(unpack(color1))
+    b:polygon({
+        x1, y1,
+        x2, y1,
+        inner[3], inner[4],
+        inner[7], inner[8],
+        x1, y2,
+    })
+
+
+    b:color(unpack(color3))
+    b:polygon({
+        x2, y1,
+        x2, y2,
+        x1, y2,
+        inner[7], inner[8],
+        inner[3], inner[4],
+    })
+
+    b:color(unpack(color2))
+    b:polygon(inner)
+
+
+    if random(3) == 1 then
+        b:color(unpack(color1))
+        b.a = 0.5
+        b:polygon({
+            x1, y1,
+            randf(x1+2, x2-2), y1,
+            x1, randf(y1+2, y2-2),
+        })
+    end
+
+    if random(3) == 1 then
+        b:color(unpack(color3))
+        b.a = 0.5
+        b:polygon({
+            x2, randf(y1+2, y2-2),
+            x2, y2,
+            randf(x1+2, x2-2), y2,
+        })
+    end
+
+end
+
+
+local STONE_SIZES = {
+    {3, 1}, {4, 2}, {2, 4}, {3, 3},
+    {3, 2}, {2, 3}, {2, 2}, {3, 1}, {1, 3}, {2, 1}, {1, 2}, {1, 0}, {0, 0},
+}
+local STONE_SIZES2 = {
+    {4, 2}, {3, 4}, {2, 4}, {4, 2},
+    {3, 2}, {2, 3}, {2, 1}, {1, 2},
+}
+
+local function allocate_stone(r, c, map, done)
+
+    shuffle(STONE_SIZES)
+    local sizes = random(3) == 1 and STONE_SIZES2 or STONE_SIZES
+
+    local r2, c2
+
+    for j = 1, #sizes do
+        local size = sizes[j]
+        c2 = math.min(map.w - 1, c + size[1])
+        r2 = math.min(map.h - 1, r + size[2])
+
+        for x = c, math.min(map.w - 1, c + size[1]) do
+            for y = r, math.min(map.h - 1, r + size[2]) do
+                local i = y * map.w + x + 1
+                if map.tile_data[i] ~= TILE_TYPE_STONE or done[i] then
+                    r2 = r
+                    c2 = c
+                    goto continue
+                end
+            end
+        end
+        if true then break end
+        ::continue::
+    end
+
+    return r, r2, c, c2
+end
+
+local function generate_stones(map, b)
+
+    local done = {}
+    for r = 0, map.h - 1 do
+        for c = 0, map.w - 1 do
+            if r % 2 == 0 then c = map.w - c - 1 end
+
+            local i = r * map.w + c + 1
+            if map.tile_data[i] ~= TILE_TYPE_STONE or done[i] then goto next_tid end
+
+            local r1, r2, c1, c2 = allocate_stone(r, c, map, done)
+
+            local min_dist = 9e9
+            for x = c1, c2 do
+                for y = r1, r2 do
+                    local i = y * map.w + x + 1
+                    done[i] = true
+                    min_dist = math.min(min_dist, map.distances[i])
+                end
+            end
+
+            local x = c1 * TILE_SIZE
+            local w = (c2 - c1 + 1) * TILE_SIZE
+            local y = r1 * TILE_SIZE
+            local h = (r2 - r1 + 1) * TILE_SIZE
+
+
+            stone(b, Box(x, y, w, h), min_dist)
+            ::next_tid::
+        end
+    end
+end
+
+
+function generate_map_meshes(map)
+    love.math.setRandomSeed(1337)
+
+    map.distances = get_distances(map)
+
+    local background = MeshBuilder()
+    local foreground = MeshBuilder()
+
+    generate_rocks(map, foreground)
+    generate_stones(map, foreground)
+    generate_plants(map, background)
+
+    return {
+        background:build(),
+        foreground:build(),
+    }
 end

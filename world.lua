@@ -1,6 +1,5 @@
 GRAVITY   = 0.2
 MAX_VY    = 3
-TILE_SIZE = 8
 
 
 SMALL_FONT = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
@@ -288,4 +287,10 @@ function World:draw()
             end
         end
     end
+
+
+    -- G.setColor(1, 1, 1)
+    -- G.print("START GAME OVER SCORE", 4, H - 20)
+    -- G.print("start game over score", 4, H - 12)
+
 end
