@@ -18,6 +18,9 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
+FONT_SMALL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
+FONT_BIG   = G.newFont("assets/monofonto rg.otf", 9, "normal", 6)
+
 
 require("helper")
 require("box")

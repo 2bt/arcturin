@@ -1,8 +1,7 @@
-GRAVITY   = 0.2
-MAX_VY    = 3
+GRAVITY = 0.2
+MAX_VY  = 3
 
 
-SMALL_FONT = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
 
 
 local BACKGROUND_SHADER = G.newShader([[
@@ -272,7 +271,7 @@ function World:draw()
         local y = 4 + (i-1) * 6
 
         G.setColor(0.8, 0.8, 0.8, 0.8)
-        G.setFont(SMALL_FONT)
+        G.setFont(FONT_SMALL)
         G.print(string.format("%02d", h.lives), 4, y - 1.2)
 
 

@@ -156,23 +156,31 @@ function Title:update()
 end
 
 
+local function print_centered(text, x, y)
+    local font = G.getFont()
+    local width = font:getWidth(text)
+    G.print(text, x - width/2, y)
+end
+
+
 function Title:draw()
     G.clear(0, 0, 0)
+
     G.push()
     G.translate(W/2, 75)
-
-
     G.scale(0.8)
 
     G.setColor(1, 1, 1)
     G.draw(title_shadow_mesh)
 
     G.setShader(title_shader)
-    -- G.setColor(0.2, 0.3, 0.5)
     G.draw(title_mesh)
     G.setShader()
-
-
     G.pop()
+
+    G.setColor(0.6, 0.6, 0.5)
+    G.setFont(FONT_BIG)
+    print_centered("move   LEFT/RIGHT\nduck   DOWN\njump   X\nshoot  C", W/2, H/2 + 30)
+
 
 end
