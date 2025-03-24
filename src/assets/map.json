@@ -705,7 +705,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"..\/meta\/tileset.json"
+         "source":"..\/..\/meta\/tileset.json"
         }],
  "tilewidth":8,
  "type":"map",

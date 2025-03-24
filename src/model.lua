@@ -12,8 +12,9 @@ end
 
 Model = Object:new()
 function Model:init(file_name)
-    local str = io.open(file_name):read("*a")
+    local str = love.filesystem.read(file_name)
     local data = loadstring("return " .. str)()
+
     self.anims = data.anims
     self.polys = {}
     for _, p in ipairs(data.polys) do
