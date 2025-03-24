@@ -141,103 +141,15 @@ end
 
 local noise = love.math.noise
 
-
-local function clip_polygon(poly, mid, normal)
-    local new_poly = {}
-    local a = poly[#poly]
-    for _, b in ipairs(poly) do
-        local da = dot(sub(a, mid), normal)
-        local db = dot(sub(b, mid), normal)
-        local inside_a = da >= 0
-        local inside_b = db >= 0
-        if inside_a and inside_b then
-            -- Both vertices are inside: keep next vertex.
-            table.insert(new_poly, b)
-        elseif inside_a and not inside_b then
-            -- Edge exits the half-plane: compute intersection.
-            local t = da / (da - db)
-            local intersect = add(a, scale(sub(b, a), t))
-            table.insert(new_poly, intersect)
-        elseif not inside_a and inside_b then
-            -- Edge enters the half-plane: compute intersection then keep next.
-            local t = da / (da - db)
-            local intersect = add(a, scale(sub(b, a), t))
-            table.insert(new_poly, intersect)
-            table.insert(new_poly, b)
-        end
-        a = b
+local function shuffle(t)
+    for i = #t, 2, -1 do
+        local j = random(i)
+        t[i], t[j] = t[j], t[i]
     end
-    return new_poly
 end
 
 
 
-local function voronoi(map, x, y)
-    local pad = 8
-    local poly = {
-        { x * 8 - pad,     y * 8 - pad },
-        { x * 8 + 8 + pad, y * 8 - pad },
-        { x * 8 + 8 + pad, y * 8 + 8 + pad },
-        { x * 8 - pad,     y * 8 + 8 + pad },
-    }
-
-    local function point(x, y)
-        local f = 9.321
-        return {
-            x * 8 + mix(-3, 11, noise(x * f, y * f, 1.234)),
-            y * 8 + mix(-3, 11, noise(x * f, y * f, 4.567)),
-        }
-    end
-
-    local c = point(x, y)
-    local distance = map.distances[x + y * map.w + 1] or 0
-
-    for oy = -1, 1 do
-        for ox = -1, 1 do
-            if ox ~= 0 or oy ~= 0 then
-
-                -- keep outer wall more regular
-                if map:tile_at(x + ox, y + oy) ~= 1 then
-                    local p = {
-                        x * 8 + 4 + 4 * ox,
-                        y * 8 + 4 + 4 * oy,
-                    }
-                    local n = {
-                        -ox + randf(-0.2, 0.2),
-                        -oy + randf(-0.2, 0.2),
-                    }
-                    poly = clip_polygon(poly, p, n)
-
-                else
-
-                    local qx = x + ox * 0.5
-                    local qy = y + oy * 0.5
-                    local q = noise(qx * 11.345, qy * 11.345)
-                    local ratio = mix(0.1, 0.9, q)
-
-                    if ox > 0 or (ox == 0 and oy > 0) then ratio = 1 - ratio end
-                    local gap = 0.6
-                    if distance > randf(0, 15) then
-                        gap = gap * 2
-                    end
-
-
-                    local p  = point(x + ox, y + oy)
-                    local pc = sub(c, p)
-                    local n  = normalize(pc)
-                    local m  = add(p, scale(n, length(pc) * ratio + gap))
-                    poly = clip_polygon(poly, m, n)
-                end
-            end
-        end
-    end
-
-    local data = {}
-    for _, p in ipairs(poly) do
-        table.append(data, p[1], p[2])
-    end
-    return data
-end
 
 
 local Turtle = Object:new()
@@ -260,7 +172,6 @@ end
 
 
 local function plant(b, x, y)
-
     local DY = 1.7
     local DP = 0.27
     local XX = 6
@@ -296,25 +207,132 @@ local function plant(b, x, y)
     end
 end
 local function generate_plants(map, b)
-    for y = 0, map.h - 1 do
-        for x = 0, map.w - 1 do
-            if  map:tile_at(x-1, y+1) ~= TILE_TYPE_EMPTY
-            and map:tile_at(x+0, y+1) ~= TILE_TYPE_EMPTY
-            and map:tile_at(x+1, y+1) ~= TILE_TYPE_EMPTY
-            and map:tile_at(x-1, y+0) == TILE_TYPE_EMPTY
-            and map:tile_at(x+0, y+0) == TILE_TYPE_EMPTY
-            and map:tile_at(x+1, y+0) == TILE_TYPE_EMPTY
-            and map:tile_at(x-1, y-1) == TILE_TYPE_EMPTY
-            and map:tile_at(x+0, y-1) == TILE_TYPE_EMPTY
-            and map:tile_at(x+1, y-1) == TILE_TYPE_EMPTY
-            and randf(0, 20) < 1
-            then
-                map.tile_data[x + map.w * y + 2] = -1
-                plant(b, x * 8 + 4, y * 8 + 8)
-            end
+    local i = 0
+    while i < #map.tile_data do
+        local x = i % map.w
+        local y = math.floor(i / map.w)
+        i = i + 1
+        if  map:tile_at(x-1, y+1) > TILE_TYPE_EMPTY
+        and map:tile_at(x+0, y+1) > TILE_TYPE_EMPTY
+        and map:tile_at(x+1, y+1) > TILE_TYPE_EMPTY
+        and map:tile_at(x-1, y+0) == TILE_TYPE_EMPTY
+        and map:tile_at(x+0, y+0) == TILE_TYPE_EMPTY
+        and map:tile_at(x+1, y+0) == TILE_TYPE_EMPTY
+        and map:tile_at(x-1, y-1) == TILE_TYPE_EMPTY
+        and map:tile_at(x+0, y-1) == TILE_TYPE_EMPTY
+        and map:tile_at(x+1, y-1) == TILE_TYPE_EMPTY
+        and randf(0, 20) < 1
+        then
+            plant(b, x * 8 + 4, y * 8 + 8)
+            i = i + 1
         end
     end
 end
+
+
+
+local function clip_polygon(poly, mid, normal)
+    local new_poly = {}
+    local a = poly[#poly]
+    for _, b in ipairs(poly) do
+        local da = dot(sub(a, mid), normal)
+        local db = dot(sub(b, mid), normal)
+        local inside_a = da >= 0
+        local inside_b = db >= 0
+        if inside_a and inside_b then
+            -- Both vertices are inside: keep next vertex.
+            table.insert(new_poly, b)
+        elseif inside_a and not inside_b then
+            -- Edge exits the half-plane: compute intersection.
+            local t = da / (da - db)
+            local intersect = add(a, scale(sub(b, a), t))
+            table.insert(new_poly, intersect)
+        elseif not inside_a and inside_b then
+            -- Edge enters the half-plane: compute intersection then keep next.
+            local t = da / (da - db)
+            local intersect = add(a, scale(sub(b, a), t))
+            table.insert(new_poly, intersect)
+            table.insert(new_poly, b)
+        end
+        a = b
+    end
+    return new_poly
+end
+
+
+
+local function voronoi(map, x, y)
+
+
+
+    local pad = 8
+    local poly = {
+        { x * 8 - pad,     y * 8 - pad },
+        { x * 8 + 8 + pad, y * 8 - pad },
+        { x * 8 + 8 + pad, y * 8 + 8 + pad },
+        { x * 8 - pad,     y * 8 + 8 + pad },
+    }
+
+    local function point(x, y)
+        local f = 9.321
+        return {
+            -- x * 8 + mix(-3, 11, noise(x * f, y * f, 1.234)),
+            -- y * 8 + mix(-3, 11, noise(x * f, y * f, 4.567)),
+
+            x * 8 + mix(-1, 9, noise(x * f, y * f, 1.234)),
+            y * 8 + mix(-1, 9, noise(x * f, y * f, 4.567)),
+            -- x * 8 + mix(3, 5, noise(x * f, y * f, 1.234)),
+            -- y * 8 + mix(3, 5, noise(x * f, y * f, 4.567)),
+        }
+    end
+
+    local c = point(x, y)
+    local distance = map.distances[x + y * map.w + 1]
+
+
+    for oy = -1, 1 do
+        for ox = -1, 1 do
+            if ox ~= 0 or oy ~= 0 then
+
+                -- keep outer wall more regular
+                if map:tile_at(x + ox, y + oy) ~= 1 then
+                    local p = {
+                        x * 8 + 4 + 4.5 * ox,
+                        y * 8 + 4 + 4.5 * oy,
+                    }
+                    local n = {
+                        -ox + randf(-0.2, 0.2),
+                        -oy + randf(-0.2, 0.2),
+                    }
+                    poly = clip_polygon(poly, p, n)
+
+                else
+                    local qx = x + ox * 0.5
+                    local qy = y + oy * 0.5
+                    local q = noise(qx * 11.345, qy * 11.345)
+                    local ratio = 0.5 + mix(-1, 1, q) * 0.4
+                    if ox > 0 or (ox == 0 and oy > 0) then ratio = 1 - ratio end
+                    local gap = 0.6
+                    if distance > randf(0, 15) then
+                        gap = gap * 2
+                    end
+                    local p  = point(x + ox, y + oy)
+                    local pc = sub(c, p)
+                    local n  = normalize(pc)
+                    local m  = add(p, scale(n, length(pc) * ratio + gap))
+                    poly = clip_polygon(poly, m, n)
+                end
+            end
+        end
+    end
+
+    local data = {}
+    for _, p in ipairs(poly) do
+        table.append(data, p[1], p[2])
+    end
+    return data
+end
+
 
 
 
@@ -323,35 +341,36 @@ local function generate_rocks(map, b)
     -- background
     b:color(0.03, 0.03, 0.03)
     local function add_point(p, c, r)
-        -- local q1 = map:tile_at(c-1, r-1) == TILE_TYPE_ROCK
-        -- local q2 = map:tile_at(c,   r-1) == TILE_TYPE_ROCK
-        -- local q3 = map:tile_at(c-1, r)   == TILE_TYPE_ROCK
-        -- local q4 = map:tile_at(c,   r)   == TILE_TYPE_ROCK
         local q1 = map:tile_at(c-1, r-1) ~= TILE_TYPE_EMPTY
         local q2 = map:tile_at(c,   r-1) ~= TILE_TYPE_EMPTY
         local q3 = map:tile_at(c-1, r)   ~= TILE_TYPE_EMPTY
         local q4 = map:tile_at(c,   r)   ~= TILE_TYPE_EMPTY
+
         local x = c * 8
         local y = r * 8
-        local pad = 0.25
-        if q1 then
-            x = x - pad
-            y = y - pad
+        if bool[q1] + bool[q2] + bool[q3] + bool[q4] <= 2 then
+            local pad = 0.25
+            if q1 then
+                x = x - pad
+                y = y - pad
+            end
+            if q2 then
+                x = x + pad
+                y = y - pad
+            end
+            if q3 then
+                x = x - pad
+                y = y + pad
+            end
+            if q4 then
+                x = x + pad
+                y = y + pad
+            end
+            x = x + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 0.0))
+            y = y + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 13.69))
         end
-        if q2 then
-            x = x + pad
-            y = y - pad
-        end
-        if q3 then
-            x = x - pad
-            y = y + pad
-        end
-        if q4 then
-            x = x + pad
-            y = y + pad
-        end
-        p[#p+1] = x --+ mix(-1, 1, noise(x*0.57, y*0.57, 0.0))
-        p[#p+1] = y --+ mix(-1, 1, noise(x*0.57, y*0.57, 13.69))
+        p[#p+1] = x
+        p[#p+1] = y
     end
 
     for r = 0, map.h - 1 do
@@ -373,7 +392,8 @@ local function generate_rocks(map, b)
         for x = 0, map.w - 1 do
             if map:tile_at(x, y) == TILE_TYPE_ROCK then
                 local d = map.distances[x + y * map.w + 1]
-                local r = randf(0.9, d)
+                local r = randf(0, d)
+
                 local f = (r < 1 and 0.7
                         or r < 3 and 0.4
                         or r < 5 and 0.15
@@ -386,7 +406,7 @@ local function generate_rocks(map, b)
                     local c = mix({ g, g, g }, c, f)
                     b:color(unpack(c))
                     local poly = voronoi(map, x, y)
-                    if #poly > 6 then b:polygon(poly) end
+                    if #poly >= 6 then b:polygon(poly) end
                 end
             end
         end
@@ -394,12 +414,7 @@ local function generate_rocks(map, b)
 end
 
 
-local function shuffle(t)
-    for i = #t, 2, -1 do
-        local j = random(i)
-        t[i], t[j] = t[j], t[i]
-    end
-end
+
 
 local color1 = {0.6, 0.6, 0.47}
 local color1 = mix({0, 0, 0}, color1, 0.6)
@@ -486,7 +501,6 @@ local function stone(b, box, dist)
 
 end
 
-
 local STONE_SIZES = {
     {3, 1}, {4, 2}, {2, 4}, {3, 3},
     {3, 2}, {2, 3}, {2, 2}, {3, 1}, {1, 3}, {2, 1}, {1, 2}, {1, 0}, {0, 0},
@@ -497,32 +511,30 @@ local STONE_SIZES2 = {
 }
 
 local function allocate_stone(r, c, map, done)
-
     shuffle(STONE_SIZES)
     local sizes = random(3) == 1 and STONE_SIZES2 or STONE_SIZES
-
     local r2, c2
-
     for j = 1, #sizes do
         local size = sizes[j]
         c2 = math.min(map.w - 1, c + size[1])
         r2 = math.min(map.h - 1, r + size[2])
 
+        local fits = true
         for x = c, math.min(map.w - 1, c + size[1]) do
             for y = r, math.min(map.h - 1, r + size[2]) do
                 local i = y * map.w + x + 1
                 if map.tile_data[i] ~= TILE_TYPE_STONE or done[i] then
-                    r2 = r
-                    c2 = c
-                    goto continue
+                    fits = false
+                    break
                 end
             end
+            if not fits then break end
         end
-        if true then break end
-        ::continue::
+        if fits then
+            return r, r2, c, c2
+        end
     end
-
-    return r, r2, c, c2
+    return r, r, c, c
 end
 
 local function generate_stones(map, b)
@@ -531,29 +543,28 @@ local function generate_stones(map, b)
     for r = 0, map.h - 1 do
         for c = 0, map.w - 1 do
             if r % 2 == 0 then c = map.w - c - 1 end
-
             local i = r * map.w + c + 1
-            if map.tile_data[i] ~= TILE_TYPE_STONE or done[i] then goto next_tid end
+            if map.tile_data[i] == TILE_TYPE_STONE and not done[i] then
 
-            local r1, r2, c1, c2 = allocate_stone(r, c, map, done)
+                local r1, r2, c1, c2 = allocate_stone(r, c, map, done)
 
-            local min_dist = 9e9
-            for x = c1, c2 do
-                for y = r1, r2 do
-                    local i = y * map.w + x + 1
-                    done[i] = true
-                    min_dist = math.min(min_dist, map.distances[i])
+                local min_dist = 9e9
+                for x = c1, c2 do
+                    for y = r1, r2 do
+                        local i = y * map.w + x + 1
+                        done[i] = true
+                        min_dist = math.min(min_dist, map.distances[i])
+                    end
                 end
+
+                local x = c1 * TILE_SIZE
+                local w = (c2 - c1 + 1) * TILE_SIZE
+                local y = r1 * TILE_SIZE
+                local h = (r2 - r1 + 1) * TILE_SIZE
+
+                stone(b, Box(x, y, w, h), min_dist)
+
             end
-
-            local x = c1 * TILE_SIZE
-            local w = (c2 - c1 + 1) * TILE_SIZE
-            local y = r1 * TILE_SIZE
-            local h = (r2 - r1 + 1) * TILE_SIZE
-
-
-            stone(b, Box(x, y, w, h), min_dist)
-            ::next_tid::
         end
     end
 end

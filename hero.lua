@@ -564,41 +564,15 @@ function Hero:update()
     self.prev_jump  = jump
     self.prev_shoot = shoot
 
-
     -- animation stuff
     self.anim_manager:update()
 end
 
 
-local HERO_SPAWN_SHADER = G.newShader([[
-varying vec2 pos;
-
-#ifdef VERTEX
-
-uniform mat4 transform;
-
-vec4 position(mat4 transform_projection, vec4 vertex_position) {
-    pos = (transform * vertex_position).xy;
-    return transform_projection * vertex_position;
-}
-#endif
-
-#ifdef PIXEL
-
-uniform float spawn;
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-    color.a = pos.y < spawn ? 0.0 : 1.0;
-    return color;
-}
-#endif
-
-]])
-
 
 function Hero:draw()
-
-    -- G.setColor(1, 1, 1, 0.2)
-    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+    -- G.setColor(1, 0, 0, 1)
+    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
 
     if self.state == STATE_DEAD then return end
 
@@ -609,25 +583,21 @@ function Hero:draw()
     HERO_MODEL.polys[BODY_POLY].color = ({ 11, 4, 6, 15 })[self.index] or 11
     HERO_MODEL.polys[BODY_POLY].shade = ({ 0.7, 0.5, 0.7, 0.7 })[self.index] or 0.7
 
-    G.push()
-    G.translate(self.box:center_x(), self.box:bottom())
 
-    G.scale(self.dir, 1)
-    G.scale(MODEL_SCALE)
-
+    local x, y, w, h = G.getScissor()
     if self.state == STATE_SPAWN then
-        local t = Transform:clone()
-        t:translate(-World.camera.x, -World.camera.y)
-        t:translate(self.box:center_x(), self.box:bottom())
-        HERO_SPAWN_SHADER:send("transform", { t:inverse():getMatrix() })
-        local o = math.min(0, (1 - self.spawn_counter / 40) * -25.5)
-        HERO_SPAWN_SHADER:send("spawn", o)
-        G.setShader(HERO_SPAWN_SHADER)
+        local _, y = G.transformPoint(0, self.box:bottom() - math.max(0, (1 - self.spawn_counter / 40) * 25.5))
+        G.setScissor(x, y, w, h)
     end
 
+
+    G.push()
+    G.translate(self.box:center_x(), self.box:bottom())
+    G.scale(self.dir, 1)
+    G.scale(MODEL_SCALE)
     HERO_MODEL:draw(self.anim_manager.gt)
-    G.setShader()
     G.pop()
+    G.setScissor(x, y, w, h)
 
 end
 

@@ -14,8 +14,8 @@ vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
 ]])
 local BACKGROUND_MESH
 do
-    local c1 = { 0.1,  0.18, 0.25 }
-    local c2 = { 0.01, 0.08, 0.08 }
+    local c1 = { 0.18,  0.22, 0.35 }
+    local c2 = { 0.1,   0.18, 0.18 }
     BACKGROUND_MESH = G.newMesh({
         { 0, 0, 0, 0, unpack(c1) },
         { W, 0, 0, 0, unpack(c1) },
@@ -64,6 +64,7 @@ end
 World = {}
 function World:init()
     self.solids        = {}
+    self.active_solids = {}
     self.heroes        = {}
     self.hero_bullets  = {}
     self.enemies       = {}
@@ -71,7 +72,7 @@ function World:init()
     self.particles     = {}
 
 
-    local ACTIVE_AREA_PADDING = 8
+    local ACTIVE_AREA_PADDING = TILE_SIZE
     self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
 
     -- loading the map will fill up actors and solids
@@ -83,7 +84,6 @@ function World:init()
         local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
         self.heroes[index] = hero
     end
-
 
     -- init camera
     local hero_box
@@ -121,7 +121,7 @@ function World:move_x(box, amount)
     end
 
     local overlap_area = 0
-    for _, s in ipairs(self.solids) do
+    for _, s in ipairs(self.active_solids) do
         local o = box:overlap_x(s.box)
         if o ~= 0 then
             if math.abs(o) > math.abs(overlap) then
@@ -150,7 +150,7 @@ function World:move_y(box, amount)
     end
 
     local overlap_area = 0
-    for _, s in ipairs(self.solids) do
+    for _, s in ipairs(self.active_solids) do
         local o = box:overlap_y(s.box)
         if o ~= 0 then
             if math.abs(o) > math.abs(overlap) then
@@ -227,6 +227,18 @@ end
 function World:update()
 
     update_alive(self.solids)
+
+    -- get all active solids for speedier collision
+    local active_solids_area = Box(0, 0, W + TILE_SIZE * 4, H + TILE_SIZE * 4)
+    active_solids_area:set_center(self.camera:get_center())
+    self.active_solids = {}
+    for _, s in ipairs(self.solids) do
+        if s.box:overlaps(active_solids_area) then
+            table.append(self.active_solids, s)
+        end
+    end
+
+
     update_all(self.heroes)
     self:update_camera()
 
@@ -271,7 +283,7 @@ function World:draw()
         local y = 4 + (i-1) * 6
 
         G.setColor(0.8, 0.8, 0.8, 0.8)
-        G.setFont(FONT_SMALL)
+        G.setFont(FONT_NORMAL)
         G.print(string.format("%02d", h.lives), 4, y - 1.2)
 
 
@@ -287,9 +299,5 @@ function World:draw()
         end
     end
 
-
-    -- G.setColor(1, 1, 1)
-    -- G.print("START GAME OVER SCORE", 4, H - 20)
-    -- G.print("start game over score", 4, H - 12)
 
 end

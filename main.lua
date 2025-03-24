@@ -38,12 +38,12 @@ function love.draw()
     G.setScissor()
 end
 function love.keypressed(k)
-    if k == "p" then
-        local screenshot = love.graphics.newScreenshot()
-        screenshot:encode('png', os.time() .. '.png')
-    elseif k == "escape" then
-        love.event.quit()
-    end
+    -- if k == "p" then
+    --     local screenshot = love.graphics.newScreenshot()
+    --     screenshot:encode('png', os.time() .. '.png')
+    -- elseif k == "escape" then
+    --     love.event.quit()
+    -- end
 end
 function love.joystickadded(j)
     Game:add_joystick(j)

@@ -105,4 +105,18 @@ function Map:draw(layer)
 
 
     G.draw(self.meshes[layer])
+
+    -- local box = World.camera
+    -- local x1 = math.floor(box.x / TILE_SIZE)
+    -- local x2 = math.floor(box:right() / TILE_SIZE)
+    -- local y1 = math.floor(box.y / TILE_SIZE)
+    -- local y2 = math.floor(box:bottom() / TILE_SIZE)
+    -- G.setFont(FONT_SMALL)
+    -- for x = x1, x2 do
+    --     for y = y1, y2 do
+    --         local i = x + y * self.w + 1
+    --         G.print(string.format("%.1f", self.distances[i]), x * 8 + 2, y * 8 + 2)
+    --     end
+    -- end
+
 end

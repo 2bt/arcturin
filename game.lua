@@ -18,8 +18,8 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
-FONT_SMALL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
-FONT_BIG   = G.newFont("assets/monofonto rg.otf", 9, "normal", 6)
+FONT_SMALL  = G.newFont("assets/monofonto rg.otf", 1, "normal", 6)
+FONT_NORMAL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
 
 
 require("helper")
@@ -44,11 +44,11 @@ local inputs = {
     Keyboard(),
     -- Keyboard2(), -- DEBUG
 }
-local state      = "title"
-local next_state = nil
+local state      = nil
+local next_state = "title"
 local blend      = 0
 
-local BLEND_SPEED = 0.1
+local BLEND_SPEED = 0.05
 
 Game = {
     inputs = inputs
@@ -79,15 +79,15 @@ function Game:update()
 
     -- state transition
     if next_state then
+        if blend == 1 then
+            state = next_state
+            next_state = nil
+            if state == "playing" then
+                World:init()
+            end
+        end
         if blend < 1 then
             blend = math.min(blend + BLEND_SPEED, 1)
-            if blend == 1 then
-                state = next_state
-                next_state = nil
-                if state == "playing" then
-                    World:init()
-                end
-            end
         end
     elseif blend > 0 then
         blend = math.max(blend - BLEND_SPEED, 0)

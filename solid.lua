@@ -18,9 +18,11 @@ local COMB_COLOR2 = { 0.4,  0.31, 0.2 }
 local COMB_MESHES = {}
 do
     local b = MeshBuilder()
+    b:color(unpack(COMB_COLOR1))
     b:polygon({0,160,40,160,40,130,60,110,140,80,160,80,160,0,120,0,120,30,100,50,20,80,0,80})
     table.insert(COMB_MESHES, b:build())
     local b = MeshBuilder()
+    b:color(unpack(COMB_COLOR2))
     b:polygon({0,0,40,0,40,30,60,50,140,80,160,80,160,160,120,160,120,130,100,110,20,80,0,80})
     table.insert(COMB_MESHES, b:build())
 end
@@ -79,12 +81,12 @@ function CombSolid:draw()
     if q == 0 then
         G.setColor(0.19, 0.15, 0.11)
         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
-        G.setColor(unpack(COMB_COLOR1))
+        G.setColor(1, 1, 1)
         G.draw(COMB_MESHES[1], self.box.x, self.box.y,  0, 1/20)
     else
         G.setColor(0.15, 0.13, 0.11)
         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
-        G.setColor(unpack(COMB_COLOR2))
+        G.setColor(1, 1, 1)
         G.draw(COMB_MESHES[2], self.box.x, self.box.y, 0, 1/20)
     end
 end

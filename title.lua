@@ -179,8 +179,7 @@ function Title:draw()
     G.pop()
 
     G.setColor(0.6, 0.6, 0.5)
-    G.setFont(FONT_BIG)
+    G.setFont(FONT_NORMAL)
     print_centered("move   LEFT/RIGHT\nduck   DOWN\njump   X\nshoot  C", W/2, H/2 + 30)
-
 
 end
