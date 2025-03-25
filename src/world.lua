@@ -230,7 +230,7 @@ function World:update()
     update_alive(self.solids)
 
     -- get all active solids for speedier collision
-    local active_solids_area = Box(0, 0, W + TILE_SIZE * 4, H + TILE_SIZE * 4)
+    local active_solids_area = Box(0, 0, W + TILE_SIZE * 5, H + TILE_SIZE * 5)
     active_solids_area:set_center(self.camera:get_center())
     self.active_solids = {}
     for _, s in ipairs(self.solids) do

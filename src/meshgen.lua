@@ -420,10 +420,9 @@ local function stone(b, box, dist)
         color1 = mix(color1, {0.2, 0.1, 0.1}, m)
         color2 = mix(color2, {0.2, 0.1, 0.1}, m)
         color3 = mix(color3, {0.2, 0.1, 0.1}, m)
-
     end
 
-    local m = math.min(dist * 0.08, 0.5)
+    local m = randf(0, 0.1) + math.min(dist * 0.07, 0.8)
     local color1 = mix(color1, {0, 0.0, 0}, m)
     local color2 = mix(color2, {0, 0, 0}, m)
     local color3 = mix(color3, {0, 0, 0}, m)
@@ -560,12 +559,10 @@ end
 function Map:generate_meshes()
     love.math.setRandomSeed(1337)
 
-    calc_layer_distances(self.main)
-    calc_layer_distances(self.background)
 
     -- background
     local b = MeshBuilder()
-
+    calc_layer_distances(self.background)
     generate_rocks(self.background, b)
     generate_stones(self.background, b)
 
@@ -577,8 +574,11 @@ function Map:generate_meshes()
 
         v[5], v[6], v[7] = unpack(mix(c, {0, 0, 0}, 0.4))
     end
+    -- free some memory
+    self.background.data = nil
+    self.background.distances = nil
 
-
+    calc_layer_distances(self.main)
     generate_plants(self.main, b)
     self.background.mesh = b:build()
 
@@ -587,5 +587,8 @@ function Map:generate_meshes()
     generate_rocks(self.main, b)
     generate_stones(self.main, b)
     self.main.mesh = b:build()
+
+    -- free some memory
+    self.main.distances = nil
 
 end

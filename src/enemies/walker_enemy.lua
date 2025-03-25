@@ -14,7 +14,8 @@ function WalkerEnemy:init(x, y)
     self.box          = Box.make_above(x, y, 14, 14)
     self.hp           = 7
     self.vy           = 0
-    self.wait_count   = 0
+    self.wait_counter = 0
+    self.jump_counter = 0
     self.state        = STATE_WALK
     self.anim_manager = AnimationManager(MODEL)
 end
@@ -23,8 +24,18 @@ function WalkerEnemy:sub_update()
     if self.state == STATE_WALK then
         local vx = self.dir * 1.1
         if World:move_x(self.box, vx) then
-            self.state      = STATE_WAIT
-            self.wait_count = 10
+            self.state        = STATE_WAIT
+            self.wait_counter = 10
+        end
+        -- jumping
+        if self.jump_counter > 0 then
+            self.jump_counter = self.jump_counter - 1
+        else
+            local x = self.box:center_x() + self.dir * 6
+            local t = World.map.main:get_tile_at_world_pos(x, self.box:bottom() + 1)
+            if t == TILE_TYPE_EMPTY then
+                self.vy = -2.5
+            end
         end
         self.anim_manager:play(ANIM_WALK)
 
@@ -35,8 +46,8 @@ function WalkerEnemy:sub_update()
         self.anim_manager:play(ANIM_JUMP)
 
     elseif self.state == STATE_WAIT then
-        self.wait_count = self.wait_count - 1
-        if self.wait_count <= 0 then
+        self.wait_counter = self.wait_counter - 1
+        if self.wait_counter <= 0 then
             self.state = STATE_WALK
             self.dir   = -self.dir
         end
@@ -48,6 +59,7 @@ function WalkerEnemy:sub_update()
     if World:move_y(self.box, vy) then
         if self.vy > 0 and self.state == STATE_JUMP then
             self.state = STATE_WALK
+            self.jump_counter = 20
         end
         self.vy = 0
     else
