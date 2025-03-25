@@ -37,17 +37,17 @@ end
 
 
 -- Felzenszwalb & Huttenlocher algorithm
-local function get_distances(map)
-    local rows = map.h
-    local cols = map.w
+local function calc_layer_distances(layer)
+    local rows = layer.h
+    local cols = layer.w
     local INF = rows*rows + cols*cols
 
     local dist = {}
     for i = 1, rows do
         dist[i] = {}
         for j = 1, cols do
-            if map:tile_at(j - 1, i - 1) == TILE_TYPE_EMPTY then
-                    dist[i][j] = 0
+            if layer:get(j - 1, i - 1) == TILE_TYPE_EMPTY then
+                dist[i][j] = 0
             else
                 dist[i][j] = INF
             end
@@ -71,7 +71,7 @@ local function get_distances(map)
     end
 
     -- Second pass: horizontal distance transform for each row (using parabola optimization)
-    local output = {}  -- final result
+    layer.distances = {}
     for i = 1, rows do
         local f = {}
         for j = 1, cols do
@@ -112,10 +112,9 @@ local function get_distances(map)
             end
             -- Compute squared distance using the parabola at v[hullIndex]
             local dx = j - v[hullIndex]
-            output[#output + 1] = (dx*dx + f[v[hullIndex]])^0.5
+            table.insert(layer.distances, (dx*dx + f[v[hullIndex]])^0.5)
         end
     end
-    return output
 end
 
 
@@ -206,21 +205,20 @@ local function plant(b, x, y)
         end
     end
 end
-local function generate_plants(map, b)
+local function generate_plants(layer, b)
     local i = 0
-    while i < #map.tile_data do
-        local x = i % map.w
-        local y = math.floor(i / map.w)
+    while i < #layer.data do
         i = i + 1
-        if  map:tile_at(x-1, y+1) > TILE_TYPE_EMPTY
-        and map:tile_at(x+0, y+1) > TILE_TYPE_EMPTY
-        and map:tile_at(x+1, y+1) > TILE_TYPE_EMPTY
-        and map:tile_at(x-1, y+0) == TILE_TYPE_EMPTY
-        and map:tile_at(x+0, y+0) == TILE_TYPE_EMPTY
-        and map:tile_at(x+1, y+0) == TILE_TYPE_EMPTY
-        and map:tile_at(x-1, y-1) == TILE_TYPE_EMPTY
-        and map:tile_at(x+0, y-1) == TILE_TYPE_EMPTY
-        and map:tile_at(x+1, y-1) == TILE_TYPE_EMPTY
+        local x, y = layer:get_cr(i)
+        if  layer:get(x-1, y+1) == TILE_TYPE_ROCK
+        and layer:get(x+0, y+1) == TILE_TYPE_ROCK
+        and layer:get(x+1, y+1) == TILE_TYPE_ROCK
+        and layer:get(x-1, y+0) == TILE_TYPE_EMPTY
+        and layer:get(x+0, y+0) == TILE_TYPE_EMPTY
+        and layer:get(x+1, y+0) == TILE_TYPE_EMPTY
+        and layer:get(x-1, y-1) == TILE_TYPE_EMPTY
+        and layer:get(x+0, y-1) == TILE_TYPE_EMPTY
+        and layer:get(x+1, y-1) == TILE_TYPE_EMPTY
         and randf(0, 20) < 1
         then
             plant(b, x * 8 + 4, y * 8 + 8)
@@ -261,9 +259,7 @@ end
 
 
 
-local function voronoi(map, x, y)
-
-
+local function voronoi(layer, x, y)
 
     local pad = 8
     local poly = {
@@ -276,18 +272,13 @@ local function voronoi(map, x, y)
     local function point(x, y)
         local f = 9.321
         return {
-            -- x * 8 + mix(-3, 11, noise(x * f, y * f, 1.234)),
-            -- y * 8 + mix(-3, 11, noise(x * f, y * f, 4.567)),
-
             x * 8 + mix(-1, 9, noise(x * f, y * f, 1.234)),
             y * 8 + mix(-1, 9, noise(x * f, y * f, 4.567)),
-            -- x * 8 + mix(3, 5, noise(x * f, y * f, 1.234)),
-            -- y * 8 + mix(3, 5, noise(x * f, y * f, 4.567)),
         }
     end
 
     local c = point(x, y)
-    local distance = map.distances[x + y * map.w + 1]
+    local distance = layer.distances[x + y * layer.w + 1]
 
 
     for oy = -1, 1 do
@@ -295,7 +286,7 @@ local function voronoi(map, x, y)
             if ox ~= 0 or oy ~= 0 then
 
                 -- keep outer wall more regular
-                if map:tile_at(x + ox, y + oy) ~= 1 then
+                if layer:get(x + ox, y + oy) ~= 1 then
                     local p = {
                         x * 8 + 4 + 4.5 * ox,
                         y * 8 + 4 + 4.5 * oy,
@@ -336,19 +327,21 @@ end
 
 
 
-local function generate_rocks(map, b)
+local function generate_rocks(layer, b)
 
     -- background
-    b:color(0.03, 0.03, 0.03)
-    local function add_point(p, c, r)
-        local q1 = map:tile_at(c-1, r-1) ~= TILE_TYPE_EMPTY
-        local q2 = map:tile_at(c,   r-1) ~= TILE_TYPE_EMPTY
-        local q3 = map:tile_at(c-1, r)   ~= TILE_TYPE_EMPTY
-        local q4 = map:tile_at(c,   r)   ~= TILE_TYPE_EMPTY
+    local color1 = { 0.1, 0.08, 0.05 }
+    local color2 = { 0.03, 0.03, 0.03 }
 
+    local function vertex(c, r)
+        local q1 = layer:get(c-1, r-1) ~= TILE_TYPE_EMPTY
+        local q2 = layer:get(c,   r-1) ~= TILE_TYPE_EMPTY
+        local q3 = layer:get(c-1, r)   ~= TILE_TYPE_EMPTY
+        local q4 = layer:get(c,   r)   ~= TILE_TYPE_EMPTY
+        local q = bool[q1] + bool[q2] + bool[q3] + bool[q4]
         local x = c * 8
         local y = r * 8
-        if bool[q1] + bool[q2] + bool[q3] + bool[q4] <= 2 then
+        if q <= 2 then
             local pad = 0.25
             if q1 then
                 x = x - pad
@@ -369,45 +362,39 @@ local function generate_rocks(map, b)
             x = x + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 0.0))
             y = y + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 13.69))
         end
-        p[#p+1] = x
-        p[#p+1] = y
-    end
 
-    for r = 0, map.h - 1 do
-        for c = 0, map.w - 1 do
-            if map:tile_at(c, r) == TILE_TYPE_ROCK then
-                local p = {}
-                add_point(p, c,   r)
-                add_point(p, c+1, r)
-                add_point(p, c+1, r+1)
-                add_point(p, c,   r+1)
-                b:polygon(p)
-            end
+        return { x, y, 0, 0, unpack(q < 4 and color1 or color2) }
+    end
+    for i, t in ipairs(layer.data) do
+        if t == TILE_TYPE_ROCK then
+            local c, r = layer:get_cr(i)
+            local v1 = vertex(c,   r)
+            local v2 = vertex(c+1, r)
+            local v3 = vertex(c+1, r+1)
+            local v4 = vertex(c,   r+1)
+            table.append(b.v, v1, v2, v3, v1, v3, v4)
         end
     end
 
 
     -- rocks
-    for y = 0, map.h - 1 do
-        for x = 0, map.w - 1 do
-            if map:tile_at(x, y) == TILE_TYPE_ROCK then
-                local d = map.distances[x + y * map.w + 1]
-                local r = randf(0, d)
+    for i, t in ipairs(layer.data) do
+        if t == TILE_TYPE_ROCK then
+            local d = layer.distances[i]
+            local r = randf(0, d)
+            local f = (r < 1 and 0.7
+            or r < 3 and 0.4
+            or r < 5 and 0.15
+            or           0)
 
-                local f = (r < 1 and 0.7
-                        or r < 3 and 0.4
-                        or r < 5 and 0.15
-                        or           0)
-
-                if f > 0 then
-                    local r = randf(0, 10)
-                    local c = COLORS[r < 4 and 3 or 9]
-                    local g = 0.02
-                    local c = mix({ g, g, g }, c, f)
-                    b:color(unpack(c))
-                    local poly = voronoi(map, x, y)
-                    if #poly >= 6 then b:polygon(poly) end
-                end
+            if f > 0 then
+                local r = randf(0, 10)
+                local c = COLORS[r < 4 and 3 or 9]
+                local g = 0.02
+                local c = mix({ g, g, g }, c, f)
+                b:color(unpack(c))
+                local poly = voronoi(layer, layer:get_cr(i))
+                if #poly >= 6 then b:polygon(poly) end
             end
         end
     end
@@ -436,8 +423,8 @@ local function stone(b, box, dist)
 
     end
 
-    local m = randf(0, 0.3) + math.min(dist * 0.08, 0.4)
-    local color1 = mix(color1, {0, 0, 0}, m)
+    local m = math.min(dist * 0.08, 0.5)
+    local color1 = mix(color1, {0, 0.0, 0}, m)
     local color2 = mix(color2, {0, 0, 0}, m)
     local color3 = mix(color3, {0, 0, 0}, m)
 
@@ -510,20 +497,20 @@ local STONE_SIZES2 = {
     {3, 2}, {2, 3}, {2, 1}, {1, 2},
 }
 
-local function allocate_stone(r, c, map, done)
+local function allocate_stone(r, c, layer, done)
     shuffle(STONE_SIZES)
     local sizes = random(3) == 1 and STONE_SIZES2 or STONE_SIZES
     local r2, c2
     for j = 1, #sizes do
         local size = sizes[j]
-        c2 = math.min(map.w - 1, c + size[1])
-        r2 = math.min(map.h - 1, r + size[2])
+        c2 = math.min(layer.w - 1, c + size[1])
+        r2 = math.min(layer.h - 1, r + size[2])
 
         local fits = true
-        for x = c, math.min(map.w - 1, c + size[1]) do
-            for y = r, math.min(map.h - 1, r + size[2]) do
-                local i = y * map.w + x + 1
-                if map.tile_data[i] ~= TILE_TYPE_STONE or done[i] then
+        for x = c, math.min(layer.w - 1, c + size[1]) do
+            for y = r, math.min(layer.h - 1, r + size[2]) do
+                local i = y * layer.w + x + 1
+                if layer.data[i] ~= TILE_TYPE_STONE or done[i] then
                     fits = false
                     break
                 end
@@ -537,23 +524,23 @@ local function allocate_stone(r, c, map, done)
     return r, r, c, c
 end
 
-local function generate_stones(map, b)
+local function generate_stones(layer, b)
 
     local done = {}
-    for r = 0, map.h - 1 do
-        for c = 0, map.w - 1 do
-            if r % 2 == 0 then c = map.w - c - 1 end
-            local i = r * map.w + c + 1
-            if map.tile_data[i] == TILE_TYPE_STONE and not done[i] then
+    for r = 0, layer.h - 1 do
+        for c = 0, layer.w - 1 do
+            if r % 2 == 0 then c = layer.w - c - 1 end
+            local i = r * layer.w + c + 1
+            if layer.data[i] == TILE_TYPE_STONE and not done[i] then
 
-                local r1, r2, c1, c2 = allocate_stone(r, c, map, done)
+                local r1, r2, c1, c2 = allocate_stone(r, c, layer, done)
 
                 local min_dist = 9e9
                 for x = c1, c2 do
                     for y = r1, r2 do
-                        local i = y * map.w + x + 1
+                        local i = y * layer.w + x + 1
                         done[i] = true
-                        min_dist = math.min(min_dist, map.distances[i])
+                        min_dist = math.min(min_dist, layer.distances[i])
                     end
                 end
 
@@ -570,20 +557,35 @@ local function generate_stones(map, b)
 end
 
 
-function generate_map_meshes(map)
+function Map:generate_meshes()
     love.math.setRandomSeed(1337)
 
-    map.distances = get_distances(map)
+    calc_layer_distances(self.main)
+    calc_layer_distances(self.background)
 
-    local background = MeshBuilder()
-    local foreground = MeshBuilder()
+    -- background
+    local b = MeshBuilder()
 
-    generate_rocks(map, foreground)
-    generate_stones(map, foreground)
-    generate_plants(map, background)
+    generate_rocks(self.background, b)
+    generate_stones(self.background, b)
 
-    return {
-        background:build(),
-        foreground:build(),
-    }
+    -- fade colors
+    for _, v in ipairs(b.v) do
+        local c = { v[5], v[6], v[7] }
+        local m = (v[5] + v[6] + v[7]) / 3
+        c = mix(c, {m * 0.8, m * 0.85, m}, 0.3)
+
+        v[5], v[6], v[7] = unpack(mix(c, {0, 0, 0}, 0.4))
+    end
+
+
+    generate_plants(self.main, b)
+    self.background.mesh = b:build()
+
+    -- main
+    local b = MeshBuilder()
+    generate_rocks(self.main, b)
+    generate_stones(self.main, b)
+    self.main.mesh = b:build()
+
 end

@@ -226,6 +226,7 @@ end
 
 function World:update()
 
+    self.map:update()
     update_alive(self.solids)
 
     -- get all active solids for speedier collision
@@ -267,13 +268,13 @@ function World:draw()
 
     G.translate(-self.camera.x, -self.camera.y)
 
-    self.map:draw(1)
+    self.map.background:draw()
     draw_alive_and_with_box(self.solids)
     draw_alive_and_with_box(self.hero_bullets)
     draw_alive_and_with_box(self.enemy_bullets)
     draw_all(self.heroes)
     draw_alive_and_with_box(self.enemies)
-    self.map:draw(2)
+    self.map.main:draw()
     draw_all(self.particles)
 
     G.pop()

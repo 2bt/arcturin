@@ -28,13 +28,15 @@ require("input")
 require("model")
 require("animation_manager")
 require("tween")
+
+
+require("enemy")
+require("map")
 require("meshgen")
 
 require("particle")
 require("solid")
 require("hero")
-require("enemy")
-require("map")
 require("world")
 require("title")
 

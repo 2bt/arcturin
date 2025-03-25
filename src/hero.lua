@@ -364,8 +364,8 @@ function Hero:update()
 
         -- update respawn position
         local y = self.box:bottom() + 1
-        if  World.map:tile_at_world_pos(self.box.x,       y) > 0
-        and World.map:tile_at_world_pos(self.box:right(), y) > 0
+        if  World.map.main:get_tile_at_world_pos(self.box.x,       y) > 0
+        and World.map.main:get_tile_at_world_pos(self.box:right(), y) > 0
         then
             self.respawn_x = self.box.x
             self.respawn_y = self.box.y
