@@ -24,14 +24,13 @@ local COMB_MESHES = {}
 do
     local b = MeshBuilder()
     b:color(unpack(COMB_COLOR1))
-    b:polygon({0,160,40,160,40,130,60,110,140,80,160,80,160,0,120,0,120,30,100,50,20,80,0,80})
+    b:polygon({0,8,1.5,8,1.5,6.5,2.5,5.5,7,3.5,8,3.5,8,0,6.5,0,6.5,1.5,5.5,2.5,1,4.5,0,4.5})
     table.insert(COMB_MESHES, b:build())
     local b = MeshBuilder()
     b:color(unpack(COMB_COLOR2))
-    b:polygon({0,0,40,0,40,30,60,50,140,80,160,80,160,160,120,160,120,130,100,110,20,80,0,80})
+    b:polygon({0,0,1.5,0,1.5,1.5,2.5,2.5,7,4.5,8,4.5,8,8,6.5,8,6.5,6.5,5.5,5.5,1,3.5,0,3.5})
     table.insert(COMB_MESHES, b:build())
 end
-
 
 
 local CombParticle = Particle:new()
@@ -63,21 +62,6 @@ function CombParticle:draw()
     G.circle("fill", self.box:center_x(), self.box:center_y() + (1 - r), r)
 end
 
-
--- function CombSolid:draw()
---     local q = (self.box.x + self.box.y) / 8 % 2
---     if q == 0 then
---         G.setColor(0.19, 0.15, 0.11)
---         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
---         G.setColor(1, 1, 1)
---         G.draw(COMB_MESHES[1], self.box.x, self.box.y,  0, 1/20)
---     else
---         G.setColor(0.15, 0.13, 0.11)
---         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
---         G.setColor(1, 1, 1)
---         G.draw(COMB_MESHES[2], self.box.x, self.box.y, 0, 1/20)
---     end
--- end
 
 local MapSolid = Solid:new()
 function MapSolid:get_hp()
@@ -323,12 +307,12 @@ function Map:draw(layer)
                         G.setColor(0.19, 0.15, 0.11)
                         G.rectangle("fill", x, y, TILE_SIZE, TILE_SIZE, 3)
                         G.setColor(1, 1, 1)
-                        G.draw(COMB_MESHES[1], x, y, 0, 1/20)
+                        G.draw(COMB_MESHES[1], x, y)
                     else
                         G.setColor(0.15, 0.13, 0.11)
                         G.rectangle("fill", x, y, TILE_SIZE, TILE_SIZE, 3)
                         G.setColor(1, 1, 1)
-                        G.draw(COMB_MESHES[2], x, y, 0, 1/20)
+                        G.draw(COMB_MESHES[2], x, y)
                     end
 
 
