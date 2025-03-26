@@ -17,9 +17,9 @@ local ENEMY_MAP = {
 }
 
 
-
-local COMB_COLOR1 = { 0.4,  0.23, 0.17 }
-local COMB_COLOR2 = { 0.4,  0.31, 0.2 }
+-- comb
+local COMB_COLOR1 = { 0.4, 0.23, 0.17 }
+local COMB_COLOR2 = { 0.4, 0.31, 0.2 }
 local COMB_MESHES = {}
 do
     local b = MeshBuilder()
@@ -31,8 +31,6 @@ do
     b:polygon({0,0,1.5,0,1.5,1.5,2.5,2.5,7,4.5,8,4.5,8,8,6.5,8,6.5,6.5,5.5,5.5,1,3.5,0,3.5})
     table.insert(COMB_MESHES, b:build())
 end
-
-
 local CombParticle = Particle:new()
 function CombParticle:init(x, y)
     self.r     = randf(0.5, 1.3)
@@ -61,8 +59,6 @@ function CombParticle:draw()
     G.setColor(unpack(self.color))
     G.circle("fill", self.box:center_x(), self.box:center_y() + (1 - r), r)
 end
-
-
 local MapSolid = Solid:new()
 function MapSolid:get_hp()
     local t = World.map.main.data[self.index]
@@ -90,11 +86,6 @@ function MapSolid:hit(power)
         World.map.main.data[self.index] = t
     end
 end
-
-
-
-
-
 
 
 
@@ -141,7 +132,6 @@ function Map:init(file_name)
 
 
     for _, l in ipairs(data.layers) do
-
         if l.name == "objects" then
             for _, o in ipairs(l.objects) do
                 local x = o.x + o.width / 2
@@ -165,7 +155,6 @@ function Map:init(file_name)
 
     self:generate_meshes()
 end
-
 
 
 

@@ -1,5 +1,11 @@
 -- Felzenszwalb & Huttenlocher algorithm
+local SOLID_TILES = {
+    [TILE_TYPE_ROCK]  = true,
+    [TILE_TYPE_STONE] = true,
+}
+
 local function calc_layer_distances(layer)
+
     local rows = layer.h
     local cols = layer.w
     local INF = rows*rows + cols*cols
@@ -8,10 +14,10 @@ local function calc_layer_distances(layer)
     for i = 1, rows do
         dist[i] = {}
         for j = 1, cols do
-            if layer:get(j - 1, i - 1) == TILE_TYPE_EMPTY then
-                dist[i][j] = 0
-            else
+            if SOLID_TILES[layer:get(j - 1, i - 1)] then
                 dist[i][j] = INF
+            else
+                dist[i][j] = 0
             end
         end
     end
@@ -108,8 +114,6 @@ local function shuffle(t)
         t[i], t[j] = t[j], t[i]
     end
 end
-
-
 
 
 
@@ -296,10 +300,10 @@ local function generate_rocks(layer, b)
     local color2 = { 0.03, 0.03, 0.03 }
 
     local function vertex(c, r)
-        local q1 = layer:get(c-1, r-1) ~= TILE_TYPE_EMPTY
-        local q2 = layer:get(c,   r-1) ~= TILE_TYPE_EMPTY
-        local q3 = layer:get(c-1, r)   ~= TILE_TYPE_EMPTY
-        local q4 = layer:get(c,   r)   ~= TILE_TYPE_EMPTY
+        local q1 = SOLID_TILES[layer:get(c-1, r-1)] or false
+        local q2 = SOLID_TILES[layer:get(c,   r-1)] or false
+        local q3 = SOLID_TILES[layer:get(c-1, r)] or false
+        local q4 = SOLID_TILES[layer:get(c,   r)] or false
         local q = bool[q1] + bool[q2] + bool[q3] + bool[q4]
         local x = c * 8
         local y = r * 8
@@ -324,19 +328,21 @@ local function generate_rocks(layer, b)
             x = x + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 0.0))
             y = y + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 13.69))
         end
-        return { x, y, 0, 0, unpack(q < 4 and color1 or color2) }
+        return { x, y, 0, 0, unpack(q < 4 and color1 or color2) }, q == 1 or q == 3
     end
     for i, t in ipairs(layer.data) do
         if t == TILE_TYPE_ROCK then
             local c, r = layer:get_cr(i)
-            local v1 = vertex(c,   r)
-            local v2 = vertex(c+1, r)
-            local v3 = vertex(c+1, r+1)
-            local v4 = vertex(c,   r+1)
+            local v1, q1 = vertex(c,   r)
+            local v2, q2 = vertex(c+1, r)
+            local v3, q3 = vertex(c+1, r+1)
+            local v4, q4 = vertex(c,   r+1)
+            if q2 or q4 then
+                v1, v2, v3, v4 = v2, v3, v4, v1
+            end
             table.append(b.v, v1, v2, v3, v1, v3, v4)
         end
     end
-
 
     -- rocks
     for i, t in ipairs(layer.data) do
