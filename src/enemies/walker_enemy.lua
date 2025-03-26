@@ -31,10 +31,26 @@ function WalkerEnemy:sub_update()
         if self.jump_counter > 0 then
             self.jump_counter = self.jump_counter - 1
         else
+
+            -- jump over cliff
             local x = self.box:center_x() + self.dir * 6
             local t = World.map.main:get_tile_at_world_pos(x, self.box:bottom() + 1)
             if t == TILE_TYPE_EMPTY then
                 self.vy = -2.5
+            end
+
+            -- jump up single tile
+            local x = self.box:center_x() + self.dir * 10
+            local t1 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1)
+            local t2 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1 - TILE_SIZE)
+            local t3 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1 - TILE_SIZE * 2)
+            if t1 ~= TILE_TYPE_EMPTY and t1 ~= TILE_TYPE_BRIDGE
+            and t2 == TILE_TYPE_EMPTY and t3 == TILE_TYPE_EMPTY then
+                if random(1, 3) == 1 then
+                    self.vy = random(1, 3) == 1 and -3.5 or -2.5
+                else
+                    self.jump_counter = 20
+                end
             end
         end
         self.anim_manager:play(ANIM_WALK)
