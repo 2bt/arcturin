@@ -362,7 +362,6 @@ local function generate_rocks(layer, b)
             x = x + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 0.0))
             y = y + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 13.69))
         end
-
         return { x, y, 0, 0, unpack(q < 4 and color1 or color2) }
     end
     for i, t in ipairs(layer.data) do
@@ -422,7 +421,7 @@ local function stone(b, box, dist)
         color3 = mix(color3, {0.2, 0.1, 0.1}, m)
     end
 
-    local m = randf(0, 0.1) + math.min(dist * 0.07, 0.8)
+    local m = randf(0, 0.1) + math.min(dist * 0.07, 0.75)
     local color1 = mix(color1, {0, 0.0, 0}, m)
     local color2 = mix(color2, {0, 0, 0}, m)
     local color3 = mix(color3, {0, 0, 0}, m)
@@ -567,12 +566,15 @@ function Map:generate_meshes()
     generate_stones(self.background, b)
 
     -- fade colors
+    local done = {}
     for _, v in ipairs(b.v) do
-        local c = { v[5], v[6], v[7] }
-        local m = (v[5] + v[6] + v[7]) / 3
-        c = mix(c, {m * 0.8, m * 0.85, m}, 0.3)
-
-        v[5], v[6], v[7] = unpack(mix(c, {0, 0, 0}, 0.4))
+        if not done[v] then
+            done[v] = true
+            local c = { v[5], v[6], v[7] }
+            local m = (v[5] + v[6] + v[7]) / 3
+            c = mix(c, {m * 0.8, m * 0.85, m}, 0.3)
+            v[5], v[6], v[7] = unpack(mix(c, {0, 0, 0}, 0.4))
+        end
     end
     -- free some memory
     self.background.data = nil

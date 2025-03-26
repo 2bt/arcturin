@@ -33,6 +33,10 @@ function Box:center_y()
     return self.y + self.h / 2
 end
 
+function Box:contains_point(x, y)
+    return self.x <= x and self:right() >= x and
+           self.y <= y and self:bottom() >= y
+end
 
 function Box:overlaps(other)
     return self.x < other.x + other.w and self:right() > other.x and

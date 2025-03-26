@@ -111,24 +111,33 @@ function World:add_particle(particle)   table.insert(self.particles, particle)  
 
 -- movement
 local DUMMY_SOLID = Solid:new()
-function World:move_x(box, amount)
-    box.x = box.x + amount
+function World:move(box, axis, amount)
+    local overlap_func, overlap_func2
+    if axis == "x" then
+        overlap_func = Box.overlap_x
+        overlap_func2 = Box.overlap_y
+        box.x = box.x + amount
+    else
+        overlap_func = Box.overlap_y
+        overlap_func2 = Box.overlap_x
+        box.y = box.y + amount
+    end
 
     local solid   = nil
-    local overlap = self.map:collision(box, "x")
+    local overlap = self.map:collision(box, overlap_func, amount)
     if overlap ~= 0 then
         solid = DUMMY_SOLID
     end
 
     local overlap_area = 0
     for _, s in ipairs(self.active_solids) do
-        local o = box:overlap_x(s.box)
+        local o = overlap_func(box, s.box)
         if o ~= 0 then
             if math.abs(o) > math.abs(overlap) then
                 overlap = o
                 solid   = s
             elseif math.abs(o) >= math.abs(overlap) then
-                local oa = math.abs(o * box:overlap_y(s.box))
+                local oa = math.abs(o * overlap_func2(box, s.box))
                 if oa > overlap_area then
                     overlap = o
                     solid   = s
@@ -137,38 +146,17 @@ function World:move_x(box, amount)
         end
     end
 
-    box.x = box.x + overlap
-    return solid
-end
-function World:move_y(box, amount)
-    box.y = box.y + amount
-
-    local solid   = nil
-    local overlap = self.map:collision(box, "y")
-    if overlap ~= 0 then
-        solid = DUMMY_SOLID
+    if axis == "x" then
+        box.x = box.x + overlap
+    else
+        box.y = box.y + overlap
     end
-
-    local overlap_area = 0
-    for _, s in ipairs(self.active_solids) do
-        local o = box:overlap_y(s.box)
-        if o ~= 0 then
-            if math.abs(o) > math.abs(overlap) then
-                overlap = o
-                solid   = s
-            elseif math.abs(o) >= math.abs(overlap) then
-                local oa = math.abs(o * box:overlap_x(s.box))
-                if oa > overlap_area then
-                    overlap = o
-                    solid   = s
-                end
-            end
-        end
-    end
-
-    box.y = box.y + overlap
     return solid
+
 end
+function World:move_x(box, amount) return self:move(box, "x", amount) end
+function World:move_y(box, amount) return self:move(box, "y", amount) end
+
 
 function World:update_camera()
     local ox, oy = self.camera:get_center()
@@ -247,6 +235,7 @@ function World:update()
     update_alive(self.hero_bullets)
     update_alive(self.enemy_bullets)
     update_alive(self.particles)
+    self.map:update()
 
 
     local gameover = true
@@ -268,25 +257,26 @@ function World:draw()
 
     G.translate(-self.camera.x, -self.camera.y)
 
-    self.map.background:draw()
+    self.map:draw("background")
     draw_alive_and_with_box(self.solids)
     draw_alive_and_with_box(self.hero_bullets)
     draw_alive_and_with_box(self.enemy_bullets)
     draw_all(self.heroes)
     draw_alive_and_with_box(self.enemies)
-    self.map.main:draw()
+    self.map:draw("main")
     draw_all(self.particles)
 
     G.pop()
 
     -- HUD
+    G.setColor(0.8, 0.8, 0.8, 0.8)
+    G.setFont(FONT_NORMAL)
+    G.print(string.format("%3d ENEMIES LEFT", #self.enemies), W - 52, 3.5)
+
     for i, h in ipairs(self.heroes) do
         local y = 4 + (i-1) * 6
 
-        G.setColor(0.8, 0.8, 0.8, 0.8)
-        G.setFont(FONT_NORMAL)
         G.print(string.format("%02d", h.lives), 4, y - 1.2)
-
 
         for j = 1, MAX_HP do
             local x = 13 + (j - 1) * 4

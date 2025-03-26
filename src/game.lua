@@ -48,6 +48,7 @@ local inputs = {
 }
 local state      = nil
 local next_state = "title"
+-- local next_state = "playing"
 local blend      = 0
 
 local BLEND_SPEED = 0.05

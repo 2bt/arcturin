@@ -268,6 +268,7 @@ end
 function Hero:is_gameover()
     return self.lives == 0 and self.state == STATE_DEAD and self.dead_counter == 0
 end
+
 function Hero:set_state(state)
 
     if self.state == STATE_HUNKER then
@@ -300,8 +301,6 @@ function Hero:set_state(state)
         self.anim_manager:play(ANIM_AIM)
         self.anim_manager:seek(self.aim)
     end
-
-
 end
 
 
@@ -314,6 +313,12 @@ function Hero:hit(damage)
         self:set_state(STATE_DEAD)
     end
 end
+
+
+local SAFE_GROUND = {
+    [TILE_TYPE_ROCK]  = true,
+    [TILE_TYPE_STONE] = true,
+}
 
 
 function Hero:update()
@@ -364,8 +369,8 @@ function Hero:update()
 
         -- update respawn position
         local y = self.box:bottom() + 1
-        if  World.map.main:get_tile_at_world_pos(self.box.x,       y) > 0
-        and World.map.main:get_tile_at_world_pos(self.box:right(), y) > 0
+        if  SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box.x,       y)]
+        and SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box:right(), y)]
         then
             self.respawn_x = self.box.x
             self.respawn_y = self.box.y
