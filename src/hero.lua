@@ -78,10 +78,8 @@ function HeroBullet:update()
 
     -- solid collision
     if s then
-        local p = self.power
-        if s.hp then p = math.min(p, s.hp) end
+        local p = math.min(self.power, s:get_hp())
         s:hit(p)
-
         self.power = self.power - p
         if self.power <= 0 then
             self:spark(nx, ny)

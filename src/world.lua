@@ -110,7 +110,6 @@ function World:add_particle(particle)   table.insert(self.particles, particle)  
 
 
 -- movement
-local DUMMY_SOLID = Solid:new()
 function World:move(box, axis, amount)
     local overlap_func, overlap_func2
     if axis == "x" then
@@ -123,11 +122,7 @@ function World:move(box, axis, amount)
         box.y = box.y + amount
     end
 
-    local solid   = nil
-    local overlap = self.map:collision(box, overlap_func, amount)
-    if overlap ~= 0 then
-        solid = DUMMY_SOLID
-    end
+    local overlap, solid = self.map:collision(box, overlap_func, amount)
 
     local overlap_area = 0
     for _, s in ipairs(self.active_solids) do

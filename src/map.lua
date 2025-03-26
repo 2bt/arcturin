@@ -5,15 +5,113 @@ TILE_SIZE = 8
 TILE_TYPE_EMPTY   = 0
 TILE_TYPE_ROCK    = 1
 TILE_TYPE_STONE   = 2
+TILE_TYPE_BRIDGE  = 3
 TILE_TYPE_COMB    = 9
-TILE_TYPE_BRIDGE  = 10
+TILE_TYPE_COMB2   = 10
 
-
+local MAX_BRIDGE_OFFSET = 2
 
 local ENEMY_MAP = {
     ["ufo"]    = UfoEnemy,
     ["walker"] = WalkerEnemy,
 }
+
+
+
+local COMB_COLOR1 = { 0.4,  0.23, 0.17 }
+local COMB_COLOR2 = { 0.4,  0.31, 0.2 }
+local COMB_MESHES = {}
+do
+    local b = MeshBuilder()
+    b:color(unpack(COMB_COLOR1))
+    b:polygon({0,160,40,160,40,130,60,110,140,80,160,80,160,0,120,0,120,30,100,50,20,80,0,80})
+    table.insert(COMB_MESHES, b:build())
+    local b = MeshBuilder()
+    b:color(unpack(COMB_COLOR2))
+    b:polygon({0,0,40,0,40,30,60,50,140,80,160,80,160,160,120,160,120,130,100,110,20,80,0,80})
+    table.insert(COMB_MESHES, b:build())
+end
+
+
+
+local CombParticle = Particle:new()
+function CombParticle:init(x, y)
+    self.r     = randf(0.5, 1.3)
+    self.box   = Box(x - self.r, y - self.r, self.r, self.r)
+    self.vx    = randf(-1.5, 1.5)
+    self.vy    = randf(-2.0, 1.0)
+    self.ttl   = random(10, 40)
+    self.color = random(1, 2) == 1 and COMB_COLOR1 or COMB_COLOR2
+end
+function CombParticle:sub_update()
+
+    self.vx = self.vx * 0.95
+    self.vy = self.vy * 0.95
+    self.vy = clamp(self.vy + GRAVITY, -MAX_VY, MAX_VY)
+    if World:move_x(self.box, self.vx) then
+        self.vx = self.vx * -1
+        self.vy = self.vy * 0.8
+    end
+    if World:move_y(self.box, self.vy) then
+        self.vy = self.vy * -randf(0, 0.7)
+        self.vx = self.vx * 0.8
+    end
+end
+function CombParticle:draw()
+    local r = math.min(self.r, self.ttl / 5)
+    G.setColor(unpack(self.color))
+    G.circle("fill", self.box:center_x(), self.box:center_y() + (1 - r), r)
+end
+
+
+-- function CombSolid:draw()
+--     local q = (self.box.x + self.box.y) / 8 % 2
+--     if q == 0 then
+--         G.setColor(0.19, 0.15, 0.11)
+--         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
+--         G.setColor(1, 1, 1)
+--         G.draw(COMB_MESHES[1], self.box.x, self.box.y,  0, 1/20)
+--     else
+--         G.setColor(0.15, 0.13, 0.11)
+--         G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
+--         G.setColor(1, 1, 1)
+--         G.draw(COMB_MESHES[2], self.box.x, self.box.y, 0, 1/20)
+--     end
+-- end
+
+local MapSolid = Solid:new()
+function MapSolid:get_hp()
+    local t = World.map.main.data[self.index]
+    if t == TILE_TYPE_COMB then return 2 end
+    if t == TILE_TYPE_COMB2 then return 1 end
+    return math.huge
+end
+function MapSolid:hit(power)
+    local t = World.map.main.data[self.index]
+    if t == TILE_TYPE_COMB or t == TILE_TYPE_COMB2 then
+        local hp = self:get_hp() - power
+        if hp > 0 then
+            t = TILE_TYPE_COMB2
+        else
+            t = TILE_TYPE_EMPTY
+            local c, r = World.map.main:get_cr(self.index)
+            local x = c * TILE_SIZE
+            local y = r * TILE_SIZE
+            for i = 1, 10 do
+                World:add_particle(CombParticle(
+                    x + randf(1, 7),
+                    y + randf(1, 7)))
+            end
+        end
+        World.map.main.data[self.index] = t
+    end
+end
+
+
+
+
+
+
 
 
 local Layer = Object:new()
@@ -81,19 +179,10 @@ function Map:init(file_name)
         end
     end
 
-    -- convert comb tiles to comb solids
-    for i, t in ipairs(self.main.data) do
-        if t == TILE_TYPE_COMB then
-            self.main.data[i] = TILE_TYPE_EMPTY
-            local c, r = self.main:get_cr(i)
-            World:add_solid(CombSolid(c * TILE_SIZE, r * TILE_SIZE))
-        end
-    end
-
     self:generate_meshes()
 end
 
-local MAX_BRIDGE_OFFSET = 2
+
 
 
 function Map:collision(box, overlap_func, amount)
@@ -104,13 +193,14 @@ function Map:collision(box, overlap_func, amount)
 
     local b = Box(0, 0, TILE_SIZE, TILE_SIZE)
     local overlap = 0
+    local index   = 0
 
     local EPSILON = 0.0001
 
     for c = c1, c2 do
         for r = r1, r2 do
-            local t = self.main:get(c, r)
-
+            local i = c + r * self.w + 1
+            local t = self.main.data[i]
             if t == TILE_TYPE_BRIDGE then
 
                 -- jump through
@@ -123,9 +213,8 @@ function Map:collision(box, overlap_func, amount)
                     b.y = r * TILE_SIZE + MAX_BRIDGE_OFFSET
                     local o = overlap_func(box, b)
                     if 0 > o and o >= -amount - EPSILON and math.abs(o) > math.abs(overlap) then
-                    -- if 0 > o and math.abs(o) > math.abs(overlap) then
-                        -- print(string.format("%.2f %.2f", o, amount), o >= -amount)
                         overlap = o
+                        index   = i
                     end
                 end
 
@@ -135,12 +224,17 @@ function Map:collision(box, overlap_func, amount)
                 local o = overlap_func(box, b)
                 if math.abs(o) > math.abs(overlap) then
                     overlap = o
+                    index   = i
                 end
             end
         end
     end
 
-    return overlap
+    if index > 0 then
+        MapSolid.index = index
+        return overlap, MapSolid
+    end
+    return 0, nil
 end
 
 function Map:update_bridge_offsets(x, y)
@@ -162,24 +256,10 @@ end
 function Map:update()
     self.tick = self.tick + 1
 
-
+    -- bridge
     local prev_bridge_offsets = self.bridge_offsets
     self.bridge_offsets = self.new_bridge_offsets
     self.new_bridge_offsets = {}
-
-
-    -- for _, h in ipairs(World.heroes) do
-    --     if h:has_weight() then
-    --         self:update_bridge_offsets(h.box:center_x(), h.box:bottom())
-    --     end
-    -- end
-    -- for _, e in ipairs(World.enemies) do
-    --     if e.active and e.alive then
-    --         self:update_bridge_offsets(e.box:center_x(), e.box:bottom())
-    --     end
-    -- end
-
-
     -- gradually move elements up
     for i, po in pairs(prev_bridge_offsets) do
         local o = self.bridge_offsets[i] or 0
@@ -196,23 +276,20 @@ function Map:draw(layer)
     if layer == "background" then
         self.background:draw()
 
-
         local box = World.camera
-        local x1 = math.floor(box.x / TILE_SIZE)
-        local x2 = math.floor(box:right() / TILE_SIZE)
-        local y1 = math.floor(box.y / TILE_SIZE)
-        local y2 = math.floor(box:bottom() / TILE_SIZE)
-
-        G.setColor(0.4, 0.4, 0.4, 0.5)
-        for x = x1, x2 do
-            for y = y1, y2 do
-                local i = x + y * self.w + 1
-                if self.main.data[i] == TILE_TYPE_BRIDGE then
+        local c1 = math.floor(box.x / TILE_SIZE)
+        local c2 = math.floor(box:right() / TILE_SIZE)
+        local r1 = math.floor(box.y / TILE_SIZE)
+        local r2 = math.floor(box:bottom() / TILE_SIZE)
+        for c = c1, c2 do
+            for r = r1, r2 do
+                local i = c + r * self.w + 1
+                local t = self.main.data[i]
+                if t == TILE_TYPE_BRIDGE then
                     for j = 0, 1 do
                         local bo = self.bridge_offsets[i + j * 0.5] or 0
-                        -- G.rectangle("fill", x * 8 + j * 4, y * 8 + bo, 4, 4)
                         G.push()
-                        G.translate(x * 8 + j * 4 + 2, y * 8 + 2 + bo)
+                        G.translate(c * 8 + j * 4 + 2, r * 8 + 2 + bo)
                         G.setColor(0.3, 0.29, 0.25)
                         G.circle("fill", 0, 0, 2.25, 6)
                         G.setColor(0.2, 0.18, 0.18)
@@ -220,14 +297,45 @@ function Map:draw(layer)
                         G.pop()
                     end
                 end
+
             end
         end
 
 
     elseif layer == "main" then
-
         self.main:draw()
 
+        local box = World.camera
+        local c1 = math.floor(box.x / TILE_SIZE)
+        local c2 = math.floor(box:right() / TILE_SIZE)
+        local r1 = math.floor(box.y / TILE_SIZE)
+        local r2 = math.floor(box:bottom() / TILE_SIZE)
+        for c = c1, c2 do
+            for r = r1, r2 do
+                local i = c + r * self.w + 1
+                local t = self.main.data[i]
 
+                if t == TILE_TYPE_COMB or t == TILE_TYPE_COMB2 then
+                    local x = c * TILE_SIZE
+                    local y = r * TILE_SIZE
+                    local q = (c + r) % 2
+                    if q == 0 then
+                        G.setColor(0.19, 0.15, 0.11)
+                        G.rectangle("fill", x, y, TILE_SIZE, TILE_SIZE, 3)
+                        G.setColor(1, 1, 1)
+                        G.draw(COMB_MESHES[1], x, y, 0, 1/20)
+                    else
+                        G.setColor(0.15, 0.13, 0.11)
+                        G.rectangle("fill", x, y, TILE_SIZE, TILE_SIZE, 3)
+                        G.setColor(1, 1, 1)
+                        G.draw(COMB_MESHES[2], x, y, 0, 1/20)
+                    end
+
+
+                end
+
+
+            end
+        end
     end
 end
