@@ -87,6 +87,7 @@ function World:init()
 
     -- init camera
     local hero_box
+    local ox = 0
     for i, h in ipairs(self.heroes) do
         local hx = h.box:center_x()
         local hy = h.box:bottom() - 12
@@ -95,9 +96,10 @@ function World:init()
         else
             hero_box:grow_to_fit(hx, hy)
         end
+        ox = ox + h.dir * 25 / #self.heroes
     end
     self.camera = Box(0, 0, W, H)
-    self.camera:set_center(hero_box:get_center())
+    self.camera:set_center(hero_box:center_x() + ox, hero_box:center_y())
 
 end
 
@@ -197,6 +199,12 @@ function World:update_camera()
     ny = mix(oy, ny, 0.12)
 
     -- slowly scroll to center of heroes
+    for i, h in ipairs(self.heroes) do
+        if not h:is_gameover() then
+            hx = hx + h.dir * 30 / #self.heroes
+        end
+    end
+
     nx = mix(nx, hx, 0.008)
     ny = mix(ny, hy, 0.01)
 
@@ -268,13 +276,14 @@ function World:draw()
 
 
     -- HUD
-    G.setColor(0.8, 0.8, 0.8, 0.8)
     G.setFont(FONT_NORMAL)
+    G.setColor(0.8, 0.8, 0.8, 0.8)
     G.print(string.format("%3d ENEMIES LEFT", #self.enemies), W - 52, 3.5)
 
     for i, h in ipairs(self.heroes) do
         local y = 4 + (i-1) * 6
 
+        G.setColor(0.8, 0.8, 0.8, 0.8)
         G.print(string.format("%02d", h.lives), 4, y - 1.2)
 
         for j = 1, MAX_HP do
