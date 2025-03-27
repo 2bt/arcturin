@@ -185,7 +185,7 @@ local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
 local ACCEL_AIR    = 0.25
 local JUMP_HEIGHT  = 5
-local ENEMY_DAMAGE = 3
+local ENEMY_DAMAGE = 2
 
 
 local MODEL_SCALE = 0.05
@@ -195,6 +195,7 @@ local ANIM_RUN    = 2
 local ANIM_HUNKER = 3
 local ANIM_AIM    = 4
 local ANIM_JUMP   = 5
+local ANIM_PAIN   = 6
 
 
 local STATE_NORMAL = 0 -- idle, run
@@ -295,12 +296,15 @@ end
 
 function Hero:take_hit(damage)
     self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
-    self.invincible_counter = 90 -- 1.5 seconds
-
     if self.hp == 0 then
         World:add_particle(HeroExplosion(self.box:get_center()))
         self:set_state(STATE_DEAD)
+        return
     end
+
+    self.invincible_counter = 90 -- 1.5 seconds
+    self:set_state(STATE_IN_AIR)
+    self.anim_manager:play(ANIM_PAIN)
 end
 
 
@@ -428,7 +432,6 @@ function Hero:update()
 
         -- turn
         if input.dx ~= 0 then self.dir = input.dx end
-        self.anim_manager:play(ANIM_HUNKER)
 
         if not input.down and self.hunk_counter == 0 then
             self:set_state(STATE_NORMAL)
@@ -462,7 +465,6 @@ function Hero:update()
             end
         end
 
-        self.anim_manager:play(ANIM_AIM)
         self.anim_manager:seek(self.aim, 0.3)
     end
 

@@ -41,17 +41,18 @@ require("world")
 require("title")
 
 
+local BLEND_SPEED = 0.05
+
 
 local inputs = {
     Keyboard(),
     -- Keyboard2(), -- DEBUG
 }
-local state      = nil
 local next_state = "title"
 -- local next_state = "playing"
+local state      = nil
 local blend      = 0
 
-local BLEND_SPEED = 0.05
 
 Game = {
     inputs = inputs
