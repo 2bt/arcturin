@@ -1,13 +1,14 @@
 
-local MODEL = Model("assets/ufo.model")
+local MODEL = Model("assets/models/ufo.model")
+local IRIS_POLY = 3
 
 UfoEnemy = Enemy:new()
 function UfoEnemy:init(x, y)
-    self.box  = Box.make_above(x, y, 20, 10)
-    self.hp   = 7
+    self.box          = Box.make_above(x, y, 20, 10)
+    self.hp           = 7
     self.anim_manager = AnimationManager(MODEL)
     self.step_counter = 0
-    self.phase = 0
+    self.phase        = 0
 end
 function UfoEnemy:sub_update()
 
@@ -34,14 +35,11 @@ function UfoEnemy:sub_update()
 
     self.anim_manager:update()
 end
-function UfoEnemy:draw()
-
+function UfoEnemy:sub_draw()
     G.push()
     G.translate(self.box:get_center())
     G.scale(0.05)
-    MODEL:draw(self.anim_manager.gt)
+    MODEL.polys[IRIS_POLY].color = mix(COLORS[3], COLORS[7], math.sin(self.tick * 0.2) * 0.5 + 0.5)
+    self.anim_manager:draw()
     G.pop()
-
-    -- G.setColor(1, 0, 0, 0.4)
-    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 3)
 end

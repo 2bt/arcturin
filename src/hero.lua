@@ -6,23 +6,17 @@ local HeroBullet = Object:new({
     vx    = 0,
     vy    = 0,
 })
-function HeroBullet:move_back()
-    self.box.x = self.box.x - self.vx
-    self.box.y = self.box.y - self.vy
-end
-function HeroBullet:spark(nx, ny)
-    self.alive = false
-    local cx = self.box:center_x() + nx * self.box.w / 2
-    local cy = self.box:center_y() + ny * self.box.h / 2
-    World:add_particle(FlashParticle(cx, cy))
+
+local function make_sparks(x, y)
+    World:add_particle(FlashParticle(x, y))
     for _ = 1, 5 do
-        local x = cx + randf(-ny, ny) * 4
-        local y = cy + randf(-nx, nx) * 4
         World:add_particle(SparkParticle(x, y))
     end
     -- DEBUG: for testing explosions
     -- make_explosion(self.box:get_center())
 end
+
+
 function HeroBullet:update()
     -- check if still on screen
     if not self.box:overlaps(World.camera) then
@@ -58,31 +52,28 @@ function HeroBullet:update()
         if s then break end
     end
 
-    local nx = 0
-    local ny = 0
-    if sx then
-        nx = self.vx > 0 and 1 or -1
-    elseif sy then
-        ny = self.vy > 0 and 1 or -1
-    end
-
-
     -- enemy collision
     for _, e in ipairs(World.enemies) do
-        if self.box:overlaps(e.box) then
-            e:hit(self.power)
-            self:spark(0, 0)
-            return
+        if e.active then
+            local x, y = e:bullet_collision(self)
+            if x then
+                self.alive = false
+                make_sparks(x, y)
+                return
+            end
         end
     end
+
 
     -- solid collision
     if s then
         local p = math.min(self.power, s:get_hp())
-        s:hit(p)
+        s:take_hit(p)
         self.power = self.power - p
         if self.power <= 0 then
-            self:spark(nx, ny)
+            self.alive = false
+            local x, y = self.box:intersect_center_ray(self.vx, self.vy)
+            make_sparks(x, y)
         end
     end
 end
@@ -138,13 +129,13 @@ end
 local TWINKLE_MESH = G.newMesh({
     {  0,  0, 0, 0, 1, 1, 1, 0.8 },
     { -1, -1, 0, 0, 1, 1, 1, 0.2 },
-    {  0, -3, 0, 0, 1, 1, 1, 0.2 },
+    {  0, -3, 0, 0, 1, 1, 0, 0.2 },
     {  1, -1, 0, 0, 1, 1, 1, 0.2 },
-    {  3,  0, 0, 0, 1, 1, 1, 0.2 },
+    {  3,  0, 0, 0, 1, 1, 0, 0.2 },
     {  1,  1, 0, 0, 1, 1, 1, 0.2 },
-    {  0,  3, 0, 0, 1, 1, 1, 0.2 },
+    {  0,  3, 0, 0, 1, 1, 0, 0.2 },
     { -1,  1, 0, 0, 1, 1, 1, 0.2 },
-    { -3,  0, 0, 0, 1, 1, 1, 0.2 },
+    { -3,  0, 0, 0, 1, 1, 0, 0.2 },
     { -1, -1, 0, 0, 1, 1, 1, 0.2 },
 })
 local TwinkleParticle = Particle:new()
@@ -214,7 +205,7 @@ local STATE_DEAD   = 4
 local STATE_SPAWN  = 5
 
 
-local HERO_MODEL = Model("assets/hero.model")
+local HERO_MODEL = Model("assets/models/hero.model")
 
 Hero = Object:new({
     prev_jump          = true,
@@ -302,7 +293,7 @@ function Hero:set_state(state)
 end
 
 
-function Hero:hit(damage)
+function Hero:take_hit(damage)
     self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
     self.invincible_counter = 90 -- 1.5 seconds
 
@@ -513,6 +504,7 @@ function Hero:update()
         self.box.x = World.camera:right() - self.box.w
     end
     if #World.heroes > 1 and self.box.y > World.camera:bottom() + 5 then
+        -- move hero up to position of highest other player
         local top_h = self
         for _, h in ipairs(World.heroes) do
             if h.state ~= STATE_DEAD and h.box.y < top_h.box.y then
@@ -522,6 +514,7 @@ function Hero:update()
         if top_h then
             self.box.x = top_h.box.x
             self.box.y = top_h.box.y
+            -- TODO: spawn particles
         end
     end
 
@@ -547,20 +540,19 @@ function Hero:update()
 
         -- enemy collision
         for _, e in ipairs(World.enemies) do
-            if self.box:overlaps(e.box) then
+            if e.active then
+                local x, y = e:hero_collision(self)
+                if x then
+                    World:add_particle(FlashParticle(x, y, 10))
+                    self:take_hit(ENEMY_DAMAGE)
+                    -- knockback
+                    local dir = self.box:center_x() > x and 1 or -1
+                    self.vy = -2
+                    self.vx = dir * 3
 
-                local x, y = self.box:intersection(e.box):get_center()
-                World:add_particle(FlashParticle(x, y, 10))
-
-                self:hit(ENEMY_DAMAGE)
-
-                -- knockback
-                self.vy = -2
-                local dir = self.box:center_x() > e.box:center_x() and 1 or -1
-                self.vx = dir * 3
+                end
             end
         end
-
     end
 
 
@@ -580,7 +572,10 @@ function Hero:draw()
     if self.state == STATE_DEAD then return end
 
     -- blink
-    if self.invincible_counter % 4 > 2 then return end
+    if self.invincible_counter > 0 then
+        FLASH_SHADER:send("flash", (self.invincible_counter / 10) % 1 )
+        G.setShader(FLASH_SHADER)
+    end
 
     -- give each player a unique body color
     HERO_MODEL.polys[BODY_POLY].color = ({ 11, 4, 6, 15 })[self.index] or 11
@@ -593,14 +588,14 @@ function Hero:draw()
         G.setScissor(x, y, w, h)
     end
 
-
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())
     G.scale(self.dir, 1)
     G.scale(MODEL_SCALE)
-    HERO_MODEL:draw(self.anim_manager.gt)
+    self.anim_manager:draw()
     G.pop()
     G.setScissor(x, y, w, h)
 
+    G.setShader()
 end
 

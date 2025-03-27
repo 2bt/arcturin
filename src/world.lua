@@ -193,8 +193,8 @@ function World:update_camera()
     hy = clamp(hy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
 
     -- fast scroll to new position
-    nx = mix(ox, nx, 0.1)
-    ny = mix(oy, ny, 0.1)
+    nx = mix(ox, nx, 0.12)
+    ny = mix(oy, ny, 0.12)
 
     -- slowly scroll to center of heroes
     nx = mix(nx, hx, 0.008)
@@ -254,14 +254,18 @@ function World:draw()
 
     self.map:draw("background")
     draw_alive_and_with_box(self.solids)
-    draw_alive_and_with_box(self.hero_bullets)
-    draw_alive_and_with_box(self.enemy_bullets)
     draw_all(self.heroes)
     draw_alive_and_with_box(self.enemies)
+    draw_alive_and_with_box(self.hero_bullets)
+    draw_alive_and_with_box(self.enemy_bullets)
+
     self.map:draw("main")
     draw_all(self.particles)
 
     G.pop()
+
+
+
 
     -- HUD
     G.setColor(0.8, 0.8, 0.8, 0.8)

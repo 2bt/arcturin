@@ -107,7 +107,7 @@ function Model:draw(global_transform)
         local x, y, a = unpack(global_transform[p.bone.i])
         G.translate(x, y)
         G.rotate(a)
-        local c = COLORS[p.color]
+        local c = type(p.color) == "number" and COLORS[p.color] or p.color
         local s = p.shade
         G.setColor(c[1] * s, c[2] * s, c[3] * s)
         G.polygon("fill", p.data)

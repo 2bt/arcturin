@@ -77,3 +77,10 @@ function Box:grow_to_fit(x, y)
     self.w = r - self.x
     self.h = b - self.y
 end
+
+function Box:intersect_center_ray(vx, vy)
+    local tx = self.w / math.abs(vx)
+    local ty = self.h / math.abs(vy)
+    local t = math.min(tx, ty) / 2
+    return self:center_x() + t * vx, self:center_y() + t * vy
+end

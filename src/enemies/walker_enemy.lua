@@ -7,7 +7,7 @@ local STATE_WALK  = 1
 local STATE_WAIT  = 2
 local STATE_JUMP  = 3
 
-local MODEL = Model("assets/walker.model")
+local MODEL = Model("assets/models/walker.model")
 
 WalkerEnemy = Enemy:new()
 function WalkerEnemy:init(x, y)
@@ -36,7 +36,7 @@ function WalkerEnemy:sub_update()
             local x = self.box:center_x() + self.dir * 6
             local t = World.map.main:get_tile_at_world_pos(x, self.box:bottom() + 1)
             if t == TILE_TYPE_EMPTY then
-                self.vy = -2.5
+                self.vy = random(1, 5) == 1 and -3.5 or -2.5
             end
 
             -- jump up single tile
@@ -85,15 +85,11 @@ function WalkerEnemy:sub_update()
 
     self.anim_manager:update()
 end
-function WalkerEnemy:draw()
-    -- G.setColor(unpack(COLORS[8]))
-    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
-
+function WalkerEnemy:sub_draw()
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())
     G.scale(self.dir, 1)
     G.scale(0.06)
-    MODEL:draw(self.anim_manager.gt)
+    self.anim_manager:draw()
     G.pop()
-
 end

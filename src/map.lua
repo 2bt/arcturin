@@ -14,6 +14,7 @@ local MAX_BRIDGE_OFFSET = 2
 local ENEMY_MAP = {
     ["ufo"]    = UfoEnemy,
     ["walker"] = WalkerEnemy,
+    ["dragon"] = DragonEnemy,
 }
 
 
@@ -66,7 +67,7 @@ function MapSolid:get_hp()
     if t == TILE_TYPE_COMB2 then return 1 end
     return math.huge
 end
-function MapSolid:hit(power)
+function MapSolid:take_hit(power)
     local t = World.map.main.data[self.index]
     if t == TILE_TYPE_COMB or t == TILE_TYPE_COMB2 then
         local hp = self:get_hp() - power

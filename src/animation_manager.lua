@@ -94,3 +94,6 @@ function AnimationManager:update()
 
     self.gt = self.model:get_global_transform(self.lt)
 end
+function AnimationManager:draw()
+    self.model:draw(self.gt)
+end
