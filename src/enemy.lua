@@ -1,8 +1,6 @@
 FLASH_SHADER = G.newShader([[
 uniform float flash;
 vec4 effect(vec4 col, sampler2D tex, vec2 tex_coords, vec2 screen_coords) {
-    // return vec4(mix(col.rgb, vec3(1.0, 1.0, 1.0) - col.rgb, flash * 1.0), col.a);
-    // return vec4(mix(col.rgb, vec3(1.0, 1.0, 1.0), min(flash, 0.5)), col.a);
     return vec4(mix(col.rgb, vec3(1.0, 1.0, 1.0), flash * 0.5), col.a);
 }]])
 
@@ -19,6 +17,8 @@ Enemy = Object:new({
 function Enemy:activate()
     self.dir = self.box:center_x() > World.camera:center_x() and -1 or 1
 end
+function Enemy:deactivate()
+end
 function Enemy:update()
 
     -- activate and deactivate
@@ -31,10 +31,11 @@ function Enemy:update()
             self.inactive_count = 0
         else
             self.inactive_count = self.inactive_count + 1
-            if self.inactive_count > 20 then
+            if self.inactive_count > 10 then
                 self.inactive_count = 0
                 self.active = false
-                return
+                self:deactivate()
+                if not self.active then return end
             end
         end
     end
@@ -57,10 +58,15 @@ function Enemy:take_hit(power)
     self.flash = 1
     self.hp    = self.hp - power
     if self.hp <= 0 then
-        self.alive = false
-        make_explosion(self.box:get_center())
+        self:die()
     end
 end
+function Enemy:die()
+    self.alive = false
+    make_explosion(self.box:get_center())
+end
+
+
 function Enemy:hero_collision(hero)
     if self.box:overlaps(hero.box) then
         return self.box:intersection(hero.box):get_center()

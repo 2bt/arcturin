@@ -19,6 +19,7 @@ end
 function love.draw()
     Transform:reset()
 
+
     local w = G.getWidth()
     local h = G.getHeight()
     if w / h < W / H then
@@ -37,13 +38,13 @@ function love.draw()
     Game:draw()
     G.setScissor()
 end
+print(love.filesystem.getSaveDirectory())
 function love.keypressed(k)
-    -- if k == "p" then
-    --     local screenshot = love.graphics.newScreenshot()
-    --     screenshot:encode('png', os.time() .. '.png')
+    if k == "p" then
+        G.captureScreenshot(os.time() .. ".png")
     -- elseif k == "escape" then
     --     love.event.quit()
-    -- end
+    end
 end
 function love.joystickadded(j)
     Game:add_joystick(j)

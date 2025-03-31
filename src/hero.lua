@@ -255,6 +255,10 @@ function Hero:init(input, index, x, y)
     self.anim_manager:update()
 end
 
+
+function Hero:is_targetable()
+    return self.state ~= STATE_DEAD and self.state ~= STATE_SPAWN
+end
 function Hero:is_gameover()
     return self.lives == 0 and self.state == STATE_DEAD and self.dead_counter == 0
 end

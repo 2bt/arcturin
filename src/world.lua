@@ -55,6 +55,7 @@ local function draw_all(t)
 end
 local function draw_alive_and_with_box(t)
     for _, e in ipairs(t) do
+        -- if e.alive then e:draw() end
         if e.alive and e.box:overlaps(World.active_area) then e:draw() end
     end
 end
@@ -77,6 +78,7 @@ function World:init()
 
     -- loading the map will fill up actors and solids
     self.map = Map("assets/map.json")
+    -- self.map = Map("assets/test-map.json")
 
     -- add heroes
     for _, input in ipairs(Game.inputs) do
@@ -109,6 +111,23 @@ function World:add_hero_bullet(bullet)  table.insert(self.hero_bullets, bullet) 
 function World:add_enemy(enemy)         table.insert(self.enemies, enemy)        end
 function World:add_enemy_bullet(bullet) table.insert(self.enemy_bullets, bullet) end
 function World:add_particle(particle)   table.insert(self.particles, particle)   end
+
+
+function World:get_nearest_hero(x, y)
+    local hero = nil
+    local dist = math.huge
+    for _, h in ipairs(self.heroes) do
+        if h:is_targetable() then
+            local hx, hy = h.box:get_center()
+            local d = distance(x, y, hx, hy)
+            if d < dist then
+                hero = h
+                dist = d
+            end
+        end
+    end
+    return hero, dist
+end
 
 
 -- movement
@@ -215,10 +234,52 @@ function World:update_camera()
 end
 
 
+
+local TimeTracker = Object:new()
+function TimeTracker:init()
+    self.checkpoint_map     = {}
+    self.checkpoints        = {}
+    self.current_checkpoint = nil
+end
+function TimeTracker:checkpoint(name)
+    local t = love.timer.getTime()
+    self:stop(t)
+    local c = self.checkpoint_map[name]
+    if not c then
+        c = {
+            name = name,
+        }
+        table.insert(self.checkpoints, c)
+        self.checkpoint_map[name] = c
+    end
+    c.t1 = t
+    self.current_checkpoint = c
+end
+function TimeTracker:stop(t)
+    if self.current_checkpoint then
+        local c = self.current_checkpoint
+        self.current_checkpoint = nil
+        c.t2 = t or love.timer.getTime()
+        c.time = c.t2 - c.t1
+    end
+end
+function TimeTracker:draw()
+    for i, c in ipairs(self.checkpoints) do
+        G.setColor(1, 1, 1, 0.5)
+        G.print(string.format("%-20s %3d", c.name, c.time * 10000), 4, 30 + (i-1) * 6)
+        G.rectangle("fill", 80, 31 + (i - 1) * 6, c.time * 1000, 4)
+    end
+end
+local TT = TimeTracker()
+
+
+
+
 function World:update()
 
-    self.map:update()
+    TT:checkpoint("update solids")
     update_alive(self.solids)
+
 
     -- get all active solids for speedier collision
     local active_solids_area = Box(0, 0, W + TILE_SIZE * 5, H + TILE_SIZE * 5)
@@ -230,15 +291,27 @@ function World:update()
         end
     end
 
-
+    TT:checkpoint("update heroes")
     update_all(self.heroes)
+
+    TT:checkpoint("update camera")
     self:update_camera()
 
+    TT:checkpoint("update enemies")
     update_alive(self.enemies)
+
+    TT:checkpoint("update hero bullets")
     update_alive(self.hero_bullets)
+
+    TT:checkpoint("update enemy bullets")
     update_alive(self.enemy_bullets)
+
+    TT:checkpoint("update particles")
     update_alive(self.particles)
+
+    TT:checkpoint("update map")
     self.map:update()
+    TT:stop()
 
 
     local gameover = true
@@ -256,24 +329,35 @@ end
 function World:draw()
     G.push()
 
+    TT:checkpoint("draw map bg")
     draw_background()
 
     G.translate(-self.camera.x, -self.camera.y)
 
     self.map:draw("background")
+
+    TT:checkpoint("draw solids")
     draw_alive_and_with_box(self.solids)
+    TT:checkpoint("draw heroes")
     draw_all(self.heroes)
+    TT:checkpoint("draw enemies")
     draw_alive_and_with_box(self.enemies)
+    TT:checkpoint("draw hero bullets")
     draw_alive_and_with_box(self.hero_bullets)
+    TT:checkpoint("draw enemy bullets")
     draw_alive_and_with_box(self.enemy_bullets)
 
+    TT:checkpoint("draw map main")
     self.map:draw("main")
+
+    TT:checkpoint("draw particles")
     draw_all(self.particles)
 
     G.pop()
 
 
 
+    TT:checkpoint("draw hud")
 
     -- HUD
     G.setFont(FONT_NORMAL)
@@ -299,4 +383,6 @@ function World:draw()
     end
 
 
+    TT:stop()
+    -- TT:draw()
 end

@@ -36,7 +36,11 @@ function WalkerEnemy:sub_update()
             local x = self.box:center_x() + self.dir * 6
             local t = World.map.main:get_tile_at_world_pos(x, self.box:bottom() + 1)
             if t == TILE_TYPE_EMPTY then
-                self.vy = random(1, 5) == 1 and -3.5 or -2.5
+                if random(1, 4) < 4 then
+                    self.vy = random(1, 5) == 1 and -3.5 or -2.5
+                else
+                    self.jump_counter = 20
+                end
             end
 
             -- jump up single tile

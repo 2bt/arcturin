@@ -95,5 +95,6 @@ function AnimationManager:update()
     self.gt = self.model:get_global_transform(self.lt)
 end
 function AnimationManager:draw()
+    if not self.gt then return end
     self.model:draw(self.gt)
 end

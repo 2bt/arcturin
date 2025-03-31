@@ -238,7 +238,7 @@ function Map:update()
     for i, po in pairs(prev_bridge_offsets) do
         local o = self.bridge_offsets[i] or 0
         if po > o then
-            self.bridge_offsets[i] = math.max(o, po - 0.2)
+            self.bridge_offsets[i] = math.max(o, po - 0.3)
         end
     end
 
