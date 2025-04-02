@@ -10,11 +10,23 @@ require("game")
 function love.load()
     G.setFont(G.newFont(14))
     G.setBackgroundColor(0.2, 0.2, 0.2)
-    love.mouse.setVisible(false)
     Game:init()
 end
-function love.update()
-    Game:update()
+
+local FIXED_DT = 1/60
+local time_left = 0
+function love.update(dt)
+    local fps = love.timer.getFPS()
+    if fps >= 59 and fps <= 61 then
+        Game:update()
+    else
+        -- fixed timestep
+        time_left = math.min(time_left + dt, FIXED_DT * 2)
+        while time_left >= FIXED_DT do
+            time_left = time_left - FIXED_DT
+            Game:update()
+        end
+    end
 end
 function love.draw()
     Transform:reset()
