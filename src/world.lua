@@ -76,7 +76,7 @@ function World:init()
     local ACTIVE_AREA_PADDING = TILE_SIZE
     self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
 
-    -- loading the map will fill up actors and solids
+    -- XXX: loading the map will fill up actors and solids
     self.map = Map("assets/map.json")
     -- self.map = Map("assets/test-map.json")
 
@@ -98,7 +98,6 @@ function World:init()
         else
             hero_box:grow_to_fit(hx, hy)
         end
-        ox = ox + h.dir * 25 / #self.heroes
     end
     self.camera = Box(0, 0, W, H)
     self.camera:set_center(hero_box:center_x() + ox, hero_box:center_y())
@@ -194,40 +193,28 @@ function World:update_camera()
     end
     if not hero_box then return end
     local hx, hy = hero_box:get_center()
-
-
-    local nx = hx
-    local ny = hy
-    local PAD_X = W / 10
-    local PAD_Y = H / 10
-    if hero_box.w <= PAD_X * 2 then
-        nx = clamp(ox, hero_box:right() - PAD_X, hero_box.x + PAD_X)
-    end
-    if hero_box.h <= PAD_Y * 2 then
-        ny = clamp(oy, hero_box:bottom() - PAD_Y, hero_box.y + PAD_Y)
-    end
-
-    -- stay inside of map
-    nx = clamp(nx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
-    ny = clamp(ny, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
     hx = clamp(hx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
     hy = clamp(hy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
 
-    -- fast scroll to new position
-    nx = mix(ox, nx, 0.12)
-    ny = mix(oy, ny, 0.12)
+    local min_border_x = math.min(hero_box.x - self.camera.x, self.camera:right() - hero_box:right())
+    local min_border_y = math.min(hero_box.y - self.camera.y, self.camera:bottom() - hero_box:bottom())
 
-    -- slowly scroll to center of heroes
-    for i, h in ipairs(self.heroes) do
-        if not h:is_gameover() then
-            hx = hx + h.dir * 30 / #self.heroes
-        end
+    local px = (min_border_x - 50) / 10
+    local py = (min_border_y - 50) / 10
+    local mx = 0.2 * 0.7^px
+    local my = 0.2 * 0.7^py
+
+    hx = mix(ox, hx, mx)
+    hy = mix(oy, hy, my)
+    local dx = hx - ox
+    local dy = hy - oy
+    local l = length(dx, dy)
+    local MAX_L = 7
+    if l > MAX_L then
+        dx = dx / l * MAX_L
+        dy = dy / l * MAX_L
     end
-
-    nx = mix(nx, hx, 0.008)
-    ny = mix(ny, hy, 0.01)
-
-    self.camera:set_center(nx, ny)
+    self.camera:set_center(ox + dx, oy + dy)
 
     -- for activating enemies
     self.active_area:set_center(self.camera:get_center())
