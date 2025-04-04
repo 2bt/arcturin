@@ -1,10 +1,12 @@
 
-local ANIM_FIRE = 1
+local ANIM_FIRE  = 1
 local ANIM_SLEEP = 2
+local ANIM_PAIN  = 3
 
 local STATE_NORMAL = 1
 local STATE_SLEEP  = 2
 local STATE_DYING  = 3
+
 
 local MODEL_HEAD = Model("assets/models/dragon-head.model")
 local MODEL_BODY = Model("assets/models/dragon-body.model")
@@ -49,7 +51,7 @@ function DragonEnemy:init(x, y)
 
     self.head_anim = AnimationManager(MODEL_HEAD)
     self.body_anim = AnimationManager(MODEL_BODY)
-    self.head_anim:play(ANIM_SLEEP)
+    self.head_anim:play(ANIM_SLEEP, 0)
 end
 
 
@@ -70,7 +72,7 @@ function DragonEnemy:sub_update()
         return
 
     elseif self.state == STATE_SLEEP then
-        self.head_anim:play(ANIM_SLEEP)
+        self.head_anim:play(ANIM_SLEEP, 0.1)
         self.tx = self.sleep_x
         self.ty = self.sleep_y
         local FRICTION = self.distance > 3 and 0.93 or 0.8
@@ -86,7 +88,7 @@ function DragonEnemy:sub_update()
 
 
     elseif self.state == STATE_NORMAL then
-        self.head_anim:play(ANIM_FIRE)
+        self.head_anim:play(ANIM_FIRE, 0.2)
 
         if self.collision or self.distance < 5 then
             local h = World:get_nearest_hero(self.head:get_center())
@@ -190,8 +192,14 @@ function DragonEnemy:bullet_collision(bullet)
                 self.state = STATE_NORMAL
             end
             if s == self.head then
-                self.vx = bullet.vx > 0 and 1 or -1
+                self.head_anim:play(ANIM_PAIN, 0.7)
                 self:take_hit(bullet.power)
+                self.vy = self.vy * 0.9 -- slow down movement on y axis
+                -- knockback
+                local dir = math.sign(bullet.vx)
+                local dx = self.head:center_x() - self.sleep_x
+                dx = dir - clamp(dx / 15, -1, 1)
+                self.vx = clamp(dx, -1, 1) * 1.5
             end
             local b = s:intersection(bullet.box)
             return b:intersect_center_ray(-bullet.vx, -bullet.vy)

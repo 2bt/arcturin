@@ -1,5 +1,5 @@
-G = love.graphics
-random = love.math.random
+G         = love.graphics
+random    = love.math.random
 Transform = love.math.newTransform()
 
 W = 320
@@ -9,11 +9,11 @@ require("game")
 
 function love.load()
     G.setFont(G.newFont(14))
-    G.setBackgroundColor(0.2, 0.2, 0.2)
+    G.setBackgroundColor(0, 0, 0)
     Game:init()
 end
 
-local FIXED_DT = 1/60
+local FIXED_DT  = 1/60
 local time_left = 0
 function love.update(dt)
     local fps = love.timer.getFPS()
