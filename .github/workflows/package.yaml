@@ -22,18 +22,30 @@ jobs:
       - name: upload love file
         uses: actions/upload-artifact@v4
         with:
-          name: "game-love-file"
+          name: "love-file"
           path: "./game.love"
+
+  build-windows-package:
+    runs-on: windows-latest
+    needs: build-love
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: download love file
+        uses: actions/download-artifact@v4
+        with:
+          name: "love-file"
+          path: "./"
 
       - name: build windows package
         uses: love-actions/love-actions-windows@v2
         with:
           love-package: "./game.love"
-          # icon-path:
           product-name: "arcturin"
 
       - name: upload windows package
         uses: actions/upload-artifact@v4
         with:
-          name: "game-windows-package"
-          path: "./build/*"
+          name: "arcturin-windows"
+          path: "./build/arcturin_x64.zip"
