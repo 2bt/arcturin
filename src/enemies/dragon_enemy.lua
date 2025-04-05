@@ -121,7 +121,7 @@ function DragonEnemy:sub_update()
                 self.dir = h.box:center_x() < self.sleep_x and -1 or 1
                 -- new target
                 self.tx = self.sleep_x + self.dir * 10 + randf(-20, 20)
-                self.ty = randf(self.sleep_y - 55, self.sleep_y - 20)
+                self.ty = randf(self.sleep_y - 55, self.sleep_y - 10)
 
 
                 -- spit fire

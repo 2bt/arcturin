@@ -185,7 +185,7 @@ local function generate_plants(layer, b)
         and layer:get(x-1, y-1) == TILE_TYPE_EMPTY
         and layer:get(x+0, y-1) == TILE_TYPE_EMPTY
         and layer:get(x+1, y-1) == TILE_TYPE_EMPTY
-        and randf(0, 20) < 1
+        and random(1, 20) == 1
         then
             plant(b, x * 8 + 4, y * 8 + 8)
             i = i + 1
@@ -193,6 +193,36 @@ local function generate_plants(layer, b)
     end
 end
 
+local function grass(b, x, y)
+    for i = 1, random(3, 15) do
+        local color = mix({ 0.3, 0.6, 0.1 }, { 0.1, 0.3, 0.1 }, randf(0, 1))
+        color = mix(color, { 0.1, 0.1, 0.1 }, randf(0.4, 0.6))
+        b:color(unpack(color))
+
+        local xx = x + randf(-3.5, 3.5)
+        local h = randf(1, 4)
+        local ox = randf(-0.7, 0.7) * h
+        local p = {
+            xx - 1, y + 1,
+            xx + ox, y - h,
+            xx + 1, y + 1,
+        }
+        b:polygon(p)
+    end
+end
+local function generate_grass(layer, b)
+    local i = 0
+    while i < #layer.data do
+        i = i + 1
+        local x, y = layer:get_cr(i)
+        if  layer:get(x, y+1) == TILE_TYPE_ROCK
+        and layer:get(x, y+0) == TILE_TYPE_EMPTY
+        and random(1, 10) <= 4
+        then
+            grass(b, x * 8 + 4, y * 8 + 8)
+        end
+    end
+end
 
 
 local function clip_polygon(poly, mid, normal)
@@ -530,6 +560,7 @@ function Map:generate_meshes()
     -- background
     local b = MeshBuilder()
     calc_layer_distances(self.background)
+    generate_grass(self.background, b)
     generate_rocks(self.background, b)
     generate_stones(self.background, b)
 
@@ -554,6 +585,7 @@ function Map:generate_meshes()
 
     -- main
     local b = MeshBuilder()
+    generate_grass(self.main, b)
     generate_rocks(self.main, b)
     generate_stones(self.main, b)
     self.main.mesh = b:build()
