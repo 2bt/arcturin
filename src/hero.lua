@@ -1,131 +1,3 @@
-local HeroBullet = Object:new({
-    alive = true,
-    first_update = true,
-    -- attributes
-    power = 1,
-    vx    = 0,
-    vy    = 0,
-})
-
-local function make_sparks(x, y)
-    World:add_particle(FlashParticle(x, y))
-    for _ = 1, 5 do
-        World:add_particle(SparkParticle(x, y))
-    end
-    -- DEBUG: for testing explosions
-    -- make_explosion(self.box:get_center())
-end
-
-
-function HeroBullet:update()
-    -- check if still on screen
-    if not self.box:overlaps(World.camera) then
-        self.alive = false
-        return
-    end
-    if self.ttl then
-        self.ttl = self.ttl - 1
-        if self.ttl < 0 then
-            self.alive = false
-            local x = self.box:center_x() + self.vx * 0.5
-            local y = self.box:center_y() + self.vy * 0.5
-            for _ = 1, 5 do
-                World:add_particle(SparkParticle(x, y))
-            end
-            return
-        end
-    end
-
-    -- move bullet back in first update
-    local steps = 1
-    if self.first_update then
-        self.first_update = false
-        steps = 2
-        self.box.x = self.box.x - self.vx * 2
-        self.box.y = self.box.y - self.vy * 2
-    end
-    local sx, sy, s
-    for _ = 1, steps do
-        sx = World:move_x(self.box, self.vx)
-        sy = World:move_y(self.box, self.vy)
-        s = sx or sy
-        if s then break end
-    end
-
-    -- enemy collision
-    for _, e in ipairs(World.enemies) do
-        if e.active then
-            local x, y = e:bullet_collision(self)
-            if x then
-                self.alive = false
-                make_sparks(x, y)
-                return
-            end
-        end
-    end
-
-
-    -- solid collision
-    if s then
-        local p = math.min(self.power, s:get_hp())
-        s:take_hit(p)
-        self.power = self.power - p
-        if self.power <= 0 then
-            self.alive = false
-            local x, y = self.box:intersect_center_ray(self.vx, self.vy)
-            make_sparks(x, y)
-        end
-    end
-end
-
-local Laser = HeroBullet:new()
-function Laser:init(x, y, dir)
-    self.box   = Box.make_centered(x, y, 10, 4)
-    self.vx    = dir * 5
-    self.power = 5
-end
-function Laser:draw()
-    G.setColor(0.9, 1, 1, 0.7)
-    G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
-end
-
-
-
-local AimShot = HeroBullet:new()
-function AimShot:init(x, y, a)
-    self.box = Box.make_centered(x, y, 5, 5)
-    self.vx  = math.sin(a) * 4
-    self.vy  = math.cos(a) * 4
-    self.a   = a
-    self.ttl = 16
-end
-local AIM_MESH
-do
-    local v = {}
-    for x = -5, 5, 0.5 do
-        local y1 = math.cos(x * 0.14) * 22 - 18
-        local y2 = math.min(y1, -1)
-        table.insert(v, { x, y1, 0, 0, 1, 1, 0.9, 1 })
-        table.insert(v, { x, y2, 0, 0, 1, 1, 0.9, 0 })
-    end
-    AIM_MESH = G.newMesh(v, "strip", "static")
-end
-function AimShot:draw()
-    G.setColor(1, 1, 1)
-    G.push()
-    G.translate(self.box:get_center())
-    G.rotate(-self.a)
-    G.draw(AIM_MESH)
-    -- G.polygon("fill",
-    --      0,  0,
-    --     -5, -2,
-    --      0,  3,
-    --      5, -2)
-    G.pop()
-    -- G.setColor(1, 1, 1, 0.2)
-    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
-end
-
 local TWINKLE_MESH = G.newMesh({
     {  0,  0, 0, 0, 1, 1, 1, 0.8 },
     { -1, -1, 0, 0, 1, 1, 1, 0.2 },
@@ -455,7 +327,7 @@ function Hero:update()
             local a = self.dir * self.aim * math.pi
             local muzzle_x = self.box:center_x() + AIM_OFFSET.x[self.aim] * self.dir
             local muzzle_y = self.box:bottom()   + AIM_OFFSET.y[self.aim]
-            World:add_hero_bullet(AimShot(muzzle_x, muzzle_y, a))
+            World:add_hero_bullet(HeroAimShot(muzzle_x, muzzle_y, a))
         end
 
         if self.shoot_counter == 0 then
@@ -528,7 +400,7 @@ function Hero:update()
     if shoot and not self.prev_shoot then
         local muzzle_x = self.box:center_x() + 10 * self.dir
         local muzzle_y = self.box.y          + 8.6
-        World:add_hero_bullet(Laser(muzzle_x, muzzle_y, self.dir))
+        World:add_hero_bullet(HeroLaser(muzzle_x, muzzle_y, self.dir))
     end
 
 

@@ -168,4 +168,11 @@ function make_explosion(x, y)
     World:add_particle(FlashParticle(x, y, 10))
 end
 
-
+function make_sparks(x, y)
+    World:add_particle(FlashParticle(x, y))
+    for _ = 1, 5 do
+        World:add_particle(SparkParticle(x, y))
+    end
+    -- DEBUG: for testing explosions
+    -- make_explosion(self.box:get_center())
+end

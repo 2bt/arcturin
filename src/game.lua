@@ -36,6 +36,7 @@ require("solid")
 require("map")
 require("meshgen")
 
+require("hero_bullet")
 require("hero")
 require("world")
 require("title")
