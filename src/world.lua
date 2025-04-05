@@ -1,9 +1,3 @@
-GRAVITY = 0.2
-MAX_VY  = 3
-
-
-
-
 local BACKGROUND_SHADER = G.newShader([[
 float gradient_noise(in vec2 uv) {
     return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
@@ -46,9 +40,7 @@ local function update_alive(t)
             j = j + 1
         end
     end
-    for i = j, #t do
-        t[i] = nil
-    end
+    for i = j, #t do t[i] = nil end
 end
 local function draw_all(t)
     for _, e in ipairs(t) do e:draw() end

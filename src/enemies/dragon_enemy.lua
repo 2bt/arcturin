@@ -1,11 +1,11 @@
-
-local ANIM_FIRE  = 1
+local ANIM_FIGHT = 1
 local ANIM_SLEEP = 2
 local ANIM_PAIN  = 3
+local ANIM_FIRE  = 4
 
-local STATE_NORMAL = 1
-local STATE_SLEEP  = 2
-local STATE_DYING  = 3
+local STATE_FIGHT = 1
+local STATE_SLEEP = 2
+local STATE_DYING = 3
 
 
 local MODEL_HEAD = Model("assets/models/dragon-head.model")
@@ -23,10 +23,12 @@ end
 
 DragonEnemy = Enemy:new()
 function DragonEnemy:init(x, y)
-    self.box         = Box.make_above(x, y, 50, 60)
-    self.state       = STATE_SLEEP
-    self.die_counter = 0
-    self.hp          = 60
+    self.box           = Box.make_above(x, y, 80, 80)
+    self.state         = STATE_SLEEP
+    self.die_counter   = 0
+    self.hp            = 60
+    self.shoot_counter = 0
+    self.fight_counter = 0
 
     self.vx = 0
     self.vy = 0
@@ -52,6 +54,18 @@ function DragonEnemy:init(x, y)
     self.head_anim = AnimationManager(MODEL_HEAD)
     self.body_anim = AnimationManager(MODEL_BODY)
     self.head_anim:play(ANIM_SLEEP, 0)
+    self.head_anim:seek(randf(0, 1))
+end
+
+function DragonEnemy:set_state(state)
+    self.state = state
+    if state == STATE_FIGHT then
+        self.shoot_counter = random(40, 100)
+        self.head_anim:play(ANIM_FIGHT, 0.2)
+        self.head_anim:seek(randf(0, 1))
+    elseif state == STATE_SLEEP then
+        self.head_anim:play(ANIM_SLEEP, 0.1)
+    end
 end
 
 
@@ -72,7 +86,6 @@ function DragonEnemy:sub_update()
         return
 
     elseif self.state == STATE_SLEEP then
-        self.head_anim:play(ANIM_SLEEP, 0.1)
         self.tx = self.sleep_x
         self.ty = self.sleep_y
         local FRICTION = self.distance > 3 and 0.93 or 0.8
@@ -82,13 +95,24 @@ function DragonEnemy:sub_update()
         -- wake up if hero comes too close
         local h, d = World:get_nearest_hero(self.tx, self.ty)
         if h and d < 30 then
-            self.state = STATE_NORMAL
+            self:set_state(STATE_FIGHT)
         end
 
 
 
-    elseif self.state == STATE_NORMAL then
-        self.head_anim:play(ANIM_FIRE, 0.2)
+    elseif self.state == STATE_FIGHT then
+
+        if self.fight_counter > 0 then
+            self.fight_counter = self.fight_counter - 1
+            if self.fight_counter == 0 then
+                self.head_anim:play(ANIM_FIGHT)
+            end
+        end
+
+        if self.shoot_counter > 0 then
+            self.shoot_counter = self.shoot_counter - 1
+        end
+
 
         if self.collision or self.distance < 5 then
             local h = World:get_nearest_hero(self.head:get_center())
@@ -97,9 +121,18 @@ function DragonEnemy:sub_update()
                 self.dir = h.box:center_x() < self.sleep_x and -1 or 1
                 -- new target
                 self.tx = self.sleep_x + self.dir * 10 + randf(-20, 20)
-                self.ty = randf(self.box.y, self.box:bottom() - 20)
+                self.ty = randf(self.sleep_y - 55, self.sleep_y - 20)
+
+
+                -- spit fire
+                if self.shoot_counter == 0 then
+                    World:add_enemy_bullet(FireBall(self.head:center_x() + self.dir * 2, self.head:center_y(), self.dir))
+                    self.head_anim:play(ANIM_FIRE)
+                    self.fight_counter = 20
+                    self.shoot_counter = random(30, 200)
+                end
             else
-                self.state = STATE_SLEEP
+                self:set_state(STATE_SLEEP)
             end
         end
     end
@@ -152,14 +185,13 @@ function DragonEnemy:sub_update()
 end
 function DragonEnemy:die()
     self.state = STATE_DYING
-    make_explosion(self.box:get_center())
 end
 
 function DragonEnemy:deactivate()
     -- go to sleep
-    if self.state == STATE_NORMAL or (self.state == STATE_SLEEP and self.distance > 0.5) then
+    if self.state == STATE_FIGHT or (self.state == STATE_SLEEP and self.distance > 0.5) then
         self.active = true
-        self.state  = STATE_SLEEP
+        self:set_state(STATE_SLEEP)
     end
 end
 
@@ -172,7 +204,7 @@ function DragonEnemy:hero_collision(hero)
         if s:overlaps(hero.box) then
             -- wake up
             if self.state == STATE_SLEEP then
-                self.state = STATE_NORMAL
+                self:set_state(STATE_FIGHT)
             end
             return s:intersection(hero.box):get_center()
         end
@@ -189,11 +221,13 @@ function DragonEnemy:bullet_collision(bullet)
         if s:overlaps(bullet.box) then
             -- wake up
             if self.state == STATE_SLEEP then
-                self.state = STATE_NORMAL
+                self:set_state(STATE_FIGHT)
             end
             if s == self.head then
-                self.head_anim:play(ANIM_PAIN, 0.7)
                 self:take_hit(bullet.power)
+                self.head_anim:play(ANIM_PAIN, 0.7)
+                self.head_anim:seek(0)
+                self.fight_counter = 10
                 self.vy = self.vy * 0.9 -- slow down movement on y axis
                 -- knockback
                 local dir = math.sign(bullet.vx)
@@ -210,7 +244,6 @@ end
 
 
 function DragonEnemy:sub_draw()
-
     if self.state == STATE_SLEEP then
         EYE_POLY.color = 16
         EYE_POLY.shade = 0.4

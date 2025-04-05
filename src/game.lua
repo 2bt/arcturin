@@ -30,6 +30,7 @@ require("model")
 require("animation_manager")
 require("tween")
 
+require("enemy_bullet")
 require("enemy")
 require("particle")
 require("solid")

@@ -26,17 +26,17 @@ function HeroBullet:update()
     end
 
     -- move bullet back in first update
-    local steps = 1
+    local steps = 2
     if self.first_update then
         self.first_update = false
-        steps = 2
+        steps = 4
         self.box.x = self.box.x - self.vx * 2
         self.box.y = self.box.y - self.vy * 2
     end
-    local sx, sy, s
+    local s
     for _ = 1, steps do
-        sx = World:move_x(self.box, self.vx)
-        sy = World:move_y(self.box, self.vy)
+        local sx = World:move_x(self.box, self.vx / 2)
+        local sy = World:move_y(self.box, self.vy / 2)
         s = sx or sy
         if s then break end
     end
@@ -67,6 +67,7 @@ function HeroBullet:update()
     end
 end
 
+
 HeroLaser = HeroBullet:new()
 function HeroLaser:init(x, y, dir)
     self.box   = Box.make_centered(x, y, 10, 4)
@@ -77,7 +78,6 @@ function HeroLaser:draw()
     G.setColor(0.9, 1, 1, 0.7)
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
 end
-
 
 
 HeroAimShot = HeroBullet:new()
@@ -105,12 +105,7 @@ function HeroAimShot:draw()
     G.translate(self.box:get_center())
     G.rotate(-self.a)
     G.draw(AIM_MESH)
-    -- G.polygon("fill",
-    --      0,  0,
-    --     -5, -2,
-    --      0,  3,
-    --      5, -2)
     G.pop()
-    -- G.setColor(1, 1, 1, 0.2)
-    -- G.rectangle("line", self.box.x, self.box.y, self.box.w, self.box.h)
+    -- G.setColor(1, 0, 1)
+    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
 end

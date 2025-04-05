@@ -1,3 +1,8 @@
+GRAVITY = 0.2
+MAX_VY  = 3
+MAX_HP  = 12
+
+
 local TWINKLE_MESH = G.newMesh({
     {  0,  0, 0, 0, 1, 1, 1, 0.8 },
     { -1, -1, 0, 0, 1, 1, 1, 0.2 },
@@ -51,7 +56,7 @@ end
 
 
 
-MAX_HP = 12
+
 
 local MAX_SPEED    = 1.25
 local ACCEL_GROUND = 0.5
@@ -170,7 +175,15 @@ function Hero:set_state(state)
 end
 
 
-function Hero:take_hit(damage)
+function Hero:take_hit(damage, dir)
+    if self.invincible_counter > 0 then return end
+
+    -- knockback
+    self.vy = -2
+    self.vx = dir * 3
+    self:set_state(STATE_IN_AIR)
+    self.anim_manager:play(ANIM_PAIN)
+
     self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
     if self.hp == 0 then
         World:add_particle(HeroExplosion(self.box:get_center()))
@@ -178,9 +191,7 @@ function Hero:take_hit(damage)
         return
     end
 
-    self.invincible_counter = 90 -- 1.5 seconds
-    self:set_state(STATE_IN_AIR)
-    self.anim_manager:play(ANIM_PAIN)
+    self.invincible_counter = 90
 end
 
 
@@ -422,12 +433,7 @@ function Hero:update()
                 local x, y = e:hero_collision(self)
                 if x then
                     World:add_particle(FlashParticle(x, y, 10))
-                    self:take_hit(ENEMY_DAMAGE)
-                    -- knockback
-                    local dir = self.box:center_x() > x and 1 or -1
-                    self.vy = -2
-                    self.vx = dir * 3
-
+                    self:take_hit(ENEMY_DAMAGE, math.sign(self.box:center_x() - x))
                 end
             end
         end
