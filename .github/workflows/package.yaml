@@ -1,10 +1,7 @@
-name: Package
+name: make windows package
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build-love:
@@ -49,3 +46,21 @@ jobs:
         with:
           name: "arcturin-windows"
           path: "./build/arcturin_x64.zip"
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: build-windows-package
+    steps:
+      - name: download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: "arcturin-windows"
+          path: "./"
+
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "arcturin_x64.zip"
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
