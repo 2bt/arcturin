@@ -3,6 +3,9 @@ name: make windows package
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write 
+
 jobs:
   build-love:
     runs-on: ubuntu-latest
@@ -61,6 +64,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: "arcturin_x64.zip"
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+          tag_name: ${{ github.run_id }}
+          name: "release ${{ github.run_id }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
