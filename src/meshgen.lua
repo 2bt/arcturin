@@ -556,7 +556,6 @@ end
 function Map:generate_meshes()
     love.math.setRandomSeed(1337)
 
-
     -- background
     local b = MeshBuilder()
     calc_layer_distances(self.background)

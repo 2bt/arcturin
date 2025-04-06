@@ -55,6 +55,9 @@ function love.keypressed(k)
     -- elseif k == "escape" then
     --     love.event.quit()
     -- end
+    if k == "f" then
+        love.window.setFullscreen(not love.window.getFullscreen(), "desktop")
+    end
 end
 function love.joystickadded(j)
     Game:add_joystick(j)

@@ -1,4 +1,4 @@
-local F = 5
+local F = 4
 function love.conf(t)
     t.window.title     = "Arcturin"
     t.window.width     = 320 * F
@@ -7,5 +7,5 @@ function love.conf(t)
     t.window.msaa      = 4
     t.window.highdpi   = true
     -- XXX
-    t.window.display   = 2
+    -- t.window.display   = 2
 end

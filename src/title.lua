@@ -180,6 +180,13 @@ function Title:draw()
 
     G.setColor(0.6, 0.6, 0.5)
     G.setFont(FONT_NORMAL)
-    print_centered("move   LEFT/RIGHT\nduck   DOWN\njump   X\nshoot  C", W/2, H/2 + 35)
+    print_centered("KEYBOARD CONTROLS", W/2, H/2 + 27)
+    print_centered(
+[[move        LEFT/RIGHT
+duck        DOWN
+jump        X
+shoot       C
+fullscreen  F
+]], W/2, H/2 + 40)
 
 end
