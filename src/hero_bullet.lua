@@ -47,6 +47,7 @@ function HeroBullet:update()
             local x, y = e:bullet_collision(self)
             if x then
                 self.alive = false
+                World:add_particle(FlashParticle(x, y))
                 make_sparks(x, y)
                 return
             end
@@ -62,7 +63,9 @@ function HeroBullet:update()
         if self.power <= 0 then
             self.alive = false
             local x, y = self.box:intersect_center_ray(self.vx, self.vy)
-            make_sparks(x, y)
+            World:add_particle(FlashParticle(x, y))
+            local l = 2 / length(self.vx, self.vy)
+            make_sparks(x - self.vx*l, y - self.vy*l) -- move away from the wall
         end
     end
 end
