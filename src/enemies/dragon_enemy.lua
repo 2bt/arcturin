@@ -215,29 +215,29 @@ function DragonEnemy:bullet_collision(bullet)
     if self.state == STATE_DYING then
         return nil, nil
     end
-    -- for i = 7, 1, -1 do
-    for i = 7, 7, -1 do -- only head
-        local s = self.segments[i]
-        if s:overlaps(bullet.box) then
-            -- wake up
-            if self.state == STATE_SLEEP then
-                self:set_state(STATE_FIGHT)
-            end
-            if s == self.head then
-                self:take_hit(bullet.power)
-                self.head_anim:play(ANIM_PAIN, 0.7)
-                self.head_anim:seek(0)
-                self.fight_counter = 10
-                self.vy = self.vy * 0.9 -- slow down movement on y axis
-                -- knockback
-                local dir = math.sign(bullet.vx)
-                local dx = self.head:center_x() - self.sleep_x
-                dx = dir - clamp(dx / 15, -1, 1)
-                self.vx = clamp(dx, -1, 1) * 1.5
-            end
-            local b = s:intersection(bullet.box)
-            return b:intersect_center_ray(-bullet.vx, -bullet.vy)
+    if self.head:overlaps(bullet.box) then
+        -- wake up
+        if self.state == STATE_SLEEP then
+            self:set_state(STATE_FIGHT)
         end
+
+        self:take_hit(bullet.power)
+        self.head_anim:play(ANIM_PAIN, 0.7)
+        self.head_anim:seek(0)
+        self.fight_counter = 10
+        -- knockback
+        local dir = math.sign(bullet.vx)
+        local dx = self.head:center_x() - self.sleep_x
+        dx = dir - clamp(dx / 15, -1, 1)
+        self.vx = clamp(dx, -1, 1) * 1.5
+        self.vy = self.vy * 0.95 -- slow down movement on y axis
+
+        -- trigger new target
+        self.tx = self.head:center_x()
+        self.ty = self.head:center_y()
+
+        local b = self.head:intersection(bullet.box)
+        return b:intersect_center_ray(-bullet.vx, -bullet.vy)
     end
     return nil, nil
 end

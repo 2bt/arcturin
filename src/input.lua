@@ -15,7 +15,8 @@ end
 
 Joystick = Input:new()
 function Joystick:init(j)
-    self.joy = j
+    self.name = j:getName()
+    self.joy  = j
 end
 function Joystick:update()
     local x, y = self.joy:getAxes()
@@ -34,7 +35,9 @@ function Joystick:update()
 end
 
 
-Keyboard = Input:new()
+Keyboard = Input:new({
+    name = "Keyboard"
+})
 function Keyboard:update()
     self:set_state({
         left  = love.keyboard.isDown("left"),

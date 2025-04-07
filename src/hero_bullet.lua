@@ -104,11 +104,7 @@ do
 end
 function HeroAimShot:draw()
     G.setColor(1, 1, 1)
-    G.push()
-    G.translate(self.box:get_center())
-    G.rotate(-self.a)
-    G.draw(AIM_MESH)
-    G.pop()
+    G.draw(AIM_MESH, self.box:center_x(), self.box:center_y(), -self.a)
     -- G.setColor(1, 0, 1)
     -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
 end

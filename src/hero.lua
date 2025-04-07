@@ -19,18 +19,14 @@ local TwinkleParticle = Particle:new()
 function TwinkleParticle:init(x, y)
     self.x = x
     self.y = y
-    self.size = Tween(0):tween(0.5, 2):tween(0, 8):kill_when_done(self)
+    self.size = Tween(0):tween(0.75, 2):tween(0, 8):kill_when_done(self)
 end
 function TwinkleParticle:sub_update()
     self.size:update()
 end
 function TwinkleParticle:draw()
     G.setColor(1, 1, 1)
-    G.push()
-    G.translate(self.x, self.y)
-    G.scale(self.size.value)
-    G.draw(TWINKLE_MESH)
-    G.pop()
+    G.draw(TWINKLE_MESH, self.x, self.y, 0, self.size.value)
 end
 
 

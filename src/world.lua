@@ -301,7 +301,7 @@ function World:update()
         end
     end
     if gameover then
-        Game:change_state("title")
+        Game:change_state(Title)
     end
 end
 

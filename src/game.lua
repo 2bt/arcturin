@@ -47,23 +47,27 @@ local BLEND_SPEED = 0.05
 
 
 local inputs = {
-    Keyboard(),
-    -- Keyboard2(), -- DEBUG
+    Keyboard,
+    -- Keyboard2, -- DEBUG
 }
-local next_state = "title"
--- local next_state = "playing"
-local state      = nil
-local blend      = 0
+local next_state = Title
+-- local next_state = World
+local state = nil
+local blend = 1
 
 
 Game = {
     inputs = inputs
 }
 function Game:init()
-
 end
 function Game:add_joystick(j)
     table.insert(inputs, Joystick(j))
+
+    for _, input in ipairs(inputs) do
+        print(input.name)
+    end
+
 end
 function Game:remove_joystick(j)
     for i, input in ipairs(inputs) do
@@ -88,9 +92,7 @@ function Game:update()
         if blend == 1 then
             state = next_state
             next_state = nil
-            if state == "playing" then
-                World:init()
-            end
+            state:init()
         end
         if blend < 1 then
             blend = math.min(blend + BLEND_SPEED, 1)
@@ -100,24 +102,14 @@ function Game:update()
     end
 
 
-    if state == "title" then
-        Title:update()
-    elseif state == "playing" then
-        World:update()
-    end
-
+    state:update()
 
 end
 
 function Game:draw()
     G.clear(0, 0, 0)
 
-    if state == "title" then
-        Title:draw()
-    elseif state == "playing" then
-        World:draw()
-    end
-
+    state:draw()
 
     G.setColor(0, 0, 0, blend)
     G.rectangle("fill", 0, 0, W, H)

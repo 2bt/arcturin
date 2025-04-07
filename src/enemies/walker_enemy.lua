@@ -14,6 +14,7 @@ function WalkerEnemy:init(x, y)
     self.box          = Box.make_above(x, y, 14, 14)
     self.hp           = 7
     self.vy           = 0
+    self.vy           = 0
     self.wait_counter = 0
     self.jump_counter = 0
     self.state        = STATE_WALK
@@ -22,8 +23,8 @@ end
 function WalkerEnemy:sub_update()
 
     if self.state == STATE_WALK then
-        local vx = self.dir * 1.1
-        if World:move_x(self.box, vx) then
+        self.vx = self.dir * 1.1
+        if World:move_x(self.box, self.vx) then
             self.state        = STATE_WAIT
             self.wait_counter = 10
         end
@@ -60,9 +61,9 @@ function WalkerEnemy:sub_update()
         self.anim_manager:play(ANIM_WALK)
 
     elseif self.state == STATE_JUMP then
-
-        local vx = self.dir * 1.1
-        World:move_x(self.box, vx)
+        if World:move_x(self.box, self.vx) then
+            self.vx = 0
+        end
         self.anim_manager:play(ANIM_JUMP)
 
     elseif self.state == STATE_WAIT then

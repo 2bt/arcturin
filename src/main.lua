@@ -14,7 +14,7 @@ function love.load()
 end
 
 local FIXED_DT  = 1/60
-local time_left = 0
+local time_left = FIXED_DT
 function love.update(dt)
     local fps = love.timer.getFPS()
     if fps >= 59 and fps <= 61 then
@@ -50,14 +50,15 @@ function love.draw()
     G.setScissor()
 end
 function love.keypressed(k)
-    -- if k == "p" then
-    --     G.captureScreenshot(os.time() .. ".png")
-    -- elseif k == "escape" then
-    --     love.event.quit()
-    -- end
+    if k == "p" then
+        G.captureScreenshot(os.time() .. ".png")
+    end
     if k == "f" then
         love.window.setFullscreen(not love.window.getFullscreen(), "desktop")
     end
+    -- if k == "escape" then
+    --     love.event.quit()
+    -- end
 end
 function love.joystickadded(j)
     Game:add_joystick(j)
