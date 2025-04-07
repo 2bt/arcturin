@@ -73,7 +73,7 @@ function World:init()
     -- self.map = Map("assets/test-map.json")
 
     -- add heroes
-    for _, input in ipairs(Game.inputs) do
+    for _, input in ipairs(Title.player_inputs) do
         local index = #self.heroes + 1
         local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
         self.heroes[index] = hero
@@ -93,7 +93,6 @@ function World:init()
     end
     self.camera = Box(0, 0, W, H)
     self.camera:set_center(hero_box:center_x() + ox, hero_box:center_y())
-
 end
 
 

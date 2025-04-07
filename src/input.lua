@@ -8,8 +8,11 @@ function Input:set_state(s)
     s.dx = bool[s.right] - bool[s.left]
     s.dy = bool[s.down] - bool[s.up]
 end
-function Input:was_pressed(key)
-    return self.state[key] and not self.prev_state[key]
+function Input:is_just_pressed(...)
+    for _, k in ipairs({...}) do
+        if self.state[k] and not self.prev_state[k] then return true end
+    end
+    return false
 end
 
 
@@ -35,9 +38,7 @@ function Joystick:update()
 end
 
 
-Keyboard = Input:new({
-    name = "Keyboard"
-})
+Keyboard = Input:new({ name = "Keyboard" })
 function Keyboard:update()
     self:set_state({
         left  = love.keyboard.isDown("left"),
@@ -52,7 +53,7 @@ function Keyboard:update()
 end
 
 
-Keyboard2 = Input:new()
+Keyboard2 = Input:new({ name = "Keyboard 2"})
 function Keyboard2:update()
     self:set_state({
         left  = love.keyboard.isDown("j"),

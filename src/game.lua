@@ -51,15 +51,15 @@ local inputs = {
     -- Keyboard2, -- DEBUG
 }
 local next_state = Title
--- local next_state = World
-local state = nil
-local blend = 1
+local state      = nil
+local blend      = 1
 
 
 Game = {
     inputs = inputs
 }
 function Game:init()
+    self:change_state(Title:init())
 end
 function Game:add_joystick(j)
     table.insert(inputs, Joystick(j))
@@ -92,6 +92,7 @@ function Game:update()
         if blend == 1 then
             state = next_state
             next_state = nil
+            -- XXX: this blocks when generating level meshes
             state:init()
         end
         if blend < 1 then

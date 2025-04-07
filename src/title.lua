@@ -81,7 +81,7 @@ do
         end
     end
 
-    local x = -70
+    local x = -75
     local y = -35
     local t = Turtle()
     -- A
@@ -143,20 +143,71 @@ end
 
 
 
-local tick = 0
-
-Title = {}
+local tick
+local state
+local player_inputs = {}
+Title = {
+    player_inputs = player_inputs,
+}
 function Title:init()
-    tick = 0
+    tick  = 0
+    state = "title"
+    table.clear(player_inputs)
 end
 function Title:update()
     tick = tick + 1
     title_shader:send("time", tick)
 
-    for _, input in ipairs(Game.inputs) do
-        if input.state.a or input.state.start then
-            Game:change_state(World)
+    if state == "title" then
+        for _, input in ipairs(Game.inputs) do
+            if input:is_just_pressed("a", "start") then
+                -- add input to player inputs
+                table.clear(player_inputs)
+                player_inputs[1] = input
+                player_inputs[input] = true
+                if #Game.inputs == 1 then
+                    -- start game
+                    Game:change_state(World)
+                else
+                    -- enter lobby
+                    state = "lobby"
+                end
+                break
+            end
         end
+    elseif state == "lobby" then
+
+        for _, input in ipairs(Game.inputs) do
+
+            if input:is_just_pressed("a") then
+                if player_inputs[input] then
+                    -- start game
+                    Game:change_state(World)
+                else
+                    -- add player
+                    table.insert(player_inputs, input)
+                    player_inputs[input] = true
+                end
+            end
+
+            if player_inputs[input] and input:is_just_pressed("b") then
+                -- remove player
+                for i, pi in ipairs(player_inputs) do
+                    if pi == input then
+                        table.remove(player_inputs, i)
+                        player_inputs[input] = nil
+                        if #player_inputs == 0 then
+                            state = "title"
+                        end
+                        break
+                    end
+                end
+            end
+
+        end
+
+
+
     end
 end
 
@@ -181,16 +232,44 @@ function Title:draw()
     G.setShader()
     G.pop()
 
-
     G.setColor(0.6, 0.6, 0.5)
     G.setFont(FONT_NORMAL)
-    print_centered("KEYBOARD CONTROLS", W/2, H/2 + 27)
-    print_centered(
-[[move        LEFT/RIGHT
-duck        DOWN
-jump        X
-shoot       C
-fullscreen  F
+
+    if state == "title" then
+
+        print_centered("KEYBOARD CONTROLS", W/2, H/2 + 27)
+        print_centered(
+[[MOVE        LEFT/RIGHT
+DUCK        DOWN
+JUMP        X
+SHOOT       C
+FULLSCREEN  F
 ]], W/2, H/2 + 40)
+
+    elseif state == "lobby" then
+
+        -- G.line(W/2, H/2 + 20, W/2, H - 10)
+
+        local y = H/2 + 27
+        local x = W/2 - 52
+        local LINE_HEIGHT = 7
+        for i, input in ipairs(player_inputs) do
+            G.print(string.format("         PLAYER %d: %s", i, input.name),  x, y)
+            y = y + LINE_HEIGHT
+        end
+        y = y + LINE_HEIGHT
+
+        local label  = "AVAILABLE DEVICES:"
+        local label2 = "                  "
+        for _, input in ipairs(Game.inputs) do
+            if not player_inputs[input] then
+                G.print(string.format("%s %s", label, input.name), x, y)
+                label = label2
+                y = y + LINE_HEIGHT
+            end
+        end
+
+    end
+
 
 end

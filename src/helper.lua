@@ -48,6 +48,9 @@ function math.sign(x)
     return x > 0 and 1 or x < 0 and -1 or 0
 end
 
+function table.clear(t)
+    for k in pairs (t) do t [k] = nil end
+end
 function table.tostring(t)
     local buf = {}
     local function w(o, s, p)

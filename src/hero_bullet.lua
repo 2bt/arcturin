@@ -98,7 +98,7 @@ do
         local y1 = math.cos(x * 0.14) * 22 - 18
         local y2 = math.min(y1, -1)
         table.insert(v, { x, y1, 0, 0, 1, 1, 0.9, 1 })
-        table.insert(v, { x, y2, 0, 0, 1, 1, 0.9, 0 })
+        table.insert(v, { x, y2, 0, 0, 1, 0.2, 0.2, 0 }) -- red tint
     end
     AIM_MESH = G.newMesh(v, "strip", "static")
 end
