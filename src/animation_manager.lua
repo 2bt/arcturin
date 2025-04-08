@@ -80,6 +80,9 @@ function AnimationManager:update()
         self.a1_frame = clamp(self.a1_seek_frame,
                               self.a1_frame - self.a1_seek_speed,
                               self.a1_frame + self.a1_seek_speed)
+        if self.a1_frame == self.a1_seek_frame then
+            self.a1_mode = MODE_PLAY
+        end
     end
 
     self.lt = self.model:get_local_transform(self.a1_frame)

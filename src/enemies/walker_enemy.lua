@@ -2,10 +2,12 @@
 local ANIM_IDLE = 1
 local ANIM_WALK = 2
 local ANIM_JUMP = 3
+local ANIM_RUN  = 4
 
-local STATE_WALK  = 1
-local STATE_WAIT  = 2
-local STATE_JUMP  = 3
+local STATE_WALK = 1
+local STATE_WAIT = 2
+local STATE_JUMP = 3
+local STATE_RUN  = 4
 
 local MODEL = Model("assets/models/walker.model")
 
@@ -73,6 +75,12 @@ function WalkerEnemy:sub_update()
             self.dir   = -self.dir
         end
         self.anim_manager:play(ANIM_IDLE)
+
+    elseif self.state == STATE_RUN then
+        self.anim_manager:play(ANIM_RUN)
+        if World:move_x(self.box, self.dir * 2) then
+            self:die()
+        end
     end
 
     self.vy = self.vy + GRAVITY
@@ -84,12 +92,41 @@ function WalkerEnemy:sub_update()
         end
         self.vy = 0
     else
-        self.state = STATE_JUMP
+        if self.state ~= STATE_RUN then
+            self.state = STATE_JUMP
+        end
     end
 
 
     self.anim_manager:update()
 end
+
+function WalkerEnemy:hero_collision(hero)
+    if self.state == STATE_RUN then
+        return nil, nil
+    end
+    if self.box:overlaps(hero.box) then
+        -- check for stomp
+        if hero.box:bottom() - hero.vy <= self.box.y - self.vy then
+            hero.box.y = self.box.y - hero.box.h
+            hero:boost()
+
+            -- start running
+            self.state = STATE_RUN
+            self.hp = 0
+            return nil, nil
+        end
+        return self.box:intersection(hero.box):get_center()
+    end
+    return nil, nil
+end
+
+function WalkerEnemy:deactivate()
+    if self.state == STATE_RUN then
+        self.alive = false
+    end
+end
+
 function WalkerEnemy:sub_draw()
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())

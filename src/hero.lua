@@ -127,7 +127,11 @@ function Hero:init(input, index, x, y)
     self:set_state(STATE_SPAWN)
     self.anim_manager:update()
 end
+function Hero:boost()
+    self.vy = -3
+    self:set_state(STATE_IN_AIR)
 
+end
 
 function Hero:is_targetable()
     return self.state ~= STATE_DEAD and self.state ~= STATE_SPAWN
@@ -156,6 +160,8 @@ function Hero:set_state(state)
 
     elseif state == STATE_IN_AIR then
         self.anim_manager:play(ANIM_JUMP)
+        self.anim_manager:seek(0, 1)
+
 
     elseif state == STATE_HUNKER then
         self.box.y = self.box.y + 6.5
@@ -242,15 +248,6 @@ function Hero:update()
     end
 
     if self.state == STATE_NORMAL then
-
-        -- update respawn position
-        local y = self.box:bottom() + 1
-        if  SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box.x,       y)]
-        and SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box:right(), y)]
-        then
-            self.respawn_x = self.box.x
-            self.respawn_y = self.box.y
-        end
 
         -- turn
         if input.dx ~= 0 then
@@ -420,18 +417,29 @@ function Hero:update()
             local y = self.box.y + randf(-3, self.box.h + 1)
             World:add_particle(TwinkleParticle(x, y))
         end
+    end
 
-    else
-
-        -- enemy collision
-        for _, e in ipairs(World.enemies) do
-            if e.active then
-                local x, y = e:hero_collision(self)
-                if x then
-                    World:add_particle(FlashParticle(x, y, 10))
-                    self:take_hit(ENEMY_DAMAGE, math.sign(self.box:center_x() - x))
-                end
+    -- enemy collision
+    local any_enemy_collision = false
+    for _, e in ipairs(World.enemies) do
+        if e.active then
+            local x, y = e:hero_collision(self)
+            if x then any_enemy_collision = true end
+            if x and self.invincible_counter == 0 then
+                World:add_particle(FlashParticle(x, y, 10))
+                self:take_hit(ENEMY_DAMAGE, math.sign(self.box:center_x() - x))
             end
+        end
+    end
+
+    -- update respawn position
+    if not any_enemy_collision and self.state == STATE_NORMAL then
+        local y = self.box:bottom() + 1
+        if  SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box.x,       y)]
+        and SAFE_GROUND[World.map.main:get_tile_at_world_pos(self.box:right(), y)]
+        then
+            self.respawn_x = self.box.x
+            self.respawn_y = self.box.y
         end
     end
 
@@ -467,6 +475,7 @@ function Hero:draw()
         local _, y = G.transformPoint(0, self.box:bottom() - math.max(0, (1 - self.spawn_counter / 40) * 25.5))
         G.setScissor(x, y, w, h)
     end
+
 
     G.push()
     G.translate(self.box:center_x(), self.box:bottom())
