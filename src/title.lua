@@ -150,7 +150,7 @@ uniform float time;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     uv.x += sin(time * 0.0027) * 0.1;
     float o = 0.0;
-    o += 0.11 / (abs(uv.y) + 0.1 + pow(uv.x, 2.0));
+    o += 0.11 / (abs(uv.y) + 0.1 + uv.x * uv.x);
     o += 0.1 / (length(uv) + 0.2) * (sin(time * 0.02) * 0.4 + 0.6);
     o -= 0.2;
     //if (o <= 0.0) return vec4(1.0);
@@ -184,7 +184,7 @@ function Title:update()
 
     if state == "title" then
         for _, input in ipairs(Game.inputs) do
-            if input:is_just_pressed("a") then
+            if input:is_just_pressed("a", "start") then
                 -- add input to player inputs
                 table.clear(player_inputs)
                 player_inputs[1] = input
@@ -201,9 +201,23 @@ function Title:update()
         end
     elseif state == "lobby" then
 
+        -- check for disconnecting inputs
+        local i = 1
+        while i <= #player_inputs do
+            local input = player_inputs[i]
+            if not input.joy or input.joy:isConnected() then
+                i = i + 1
+            else
+                table.remove(player_inputs, i)
+                if #player_inputs == 0 then
+                    state = "title"
+                end
+            end
+        end
+
         for _, input in ipairs(Game.inputs) do
 
-            if input:is_just_pressed("a") then
+            if input:is_just_pressed("a", "start") then
                 if player_inputs[input] then
                     -- start game
                     Game:change_state(World)
@@ -239,15 +253,12 @@ function Title:draw()
     TITLE_SHADER:send("time", tick)
     FLARE_SHADER:send("time", tick)
 
-    G.clear(0, 0, 0)
-
     -- title
     G.setColor(1, 1, 1)
     G.draw(TITLE_SHADOW_MESH, W/2, 60, 0, 0.6)
     G.setShader(TITLE_SHADER)
     G.draw(TITLE_MESH, W/2, 60, 0, 0.6)
     G.setShader()
-
 
     -- flare
     G.setBlendMode("add")
@@ -256,8 +267,7 @@ function Title:draw()
     G.setShader()
     G.setBlendMode("alpha")
 
-
-
+    -- text
     G.setColor(0.6, 0.6, 0.5)
     G.setFont(FONT_NORMAL)
     local LINE_HEIGHT = FONT_NORMAL:getHeight()
@@ -284,8 +294,10 @@ Fullscreen  [F] ]], W/2 - 13 * CHAR_WIDTH, y)
         local x = W/2 - 52
 
         for i, input in ipairs(player_inputs) do
-            G.print(string.format("Press %s to start .....", input.button_name_a), W/2 - CHAR_WIDTH * 25, y)
-            G.print(string.format("Player %d (%s)", i, input.name), W/2, y)
+            local txt = string.format("Player %d (%s)", i, input.name)
+            local pad = string.rep(".", 30 - #txt)
+            G.print(string.format("%s %s Press %s to start", txt, pad, input.button_name_a),
+                    W/2 - CHAR_WIDTH * 25, y)
             y = y + LINE_HEIGHT
         end
 
@@ -295,8 +307,11 @@ Fullscreen  [F] ]], W/2 - 13 * CHAR_WIDTH, y)
             y = y + LINE_HEIGHT
             for _, input in ipairs(Game.inputs) do
                 if not player_inputs[input] then
-                    G.print(string.format("Press %s to join ......", input.button_name_a), W/2 - CHAR_WIDTH * 25, y)
-                    G.print(string.format("%s", input.name), W/2, y)
+
+                    local txt = input.name
+                    local pad = string.rep(".", 30 - #txt)
+                    G.print(string.format("%s %s Press %s to join", txt, pad, input.button_name_a),
+                            W/2 - CHAR_WIDTH * 25, y)
                     y = y + LINE_HEIGHT
                 end
             end
