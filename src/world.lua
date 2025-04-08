@@ -75,7 +75,7 @@ function World:init()
     -- add heroes
     for _, input in ipairs(Title.player_inputs) do
         local index = #self.heroes + 1
-        local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 16, self.map.hero_y)
+        local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 8, self.map.hero_y)
         self.heroes[index] = hero
     end
 
@@ -317,7 +317,10 @@ function World:draw()
     TT:checkpoint("draw solids")
     draw_alive_and_with_box(self.solids)
     TT:checkpoint("draw heroes")
-    draw_all(self.heroes)
+
+    -- draw in reverse order
+    for i = #self.heroes, 1, -1 do self.heroes[i]:draw() end
+
     TT:checkpoint("draw enemies")
     draw_alive_and_with_box(self.enemies)
     TT:checkpoint("draw hero bullets")
@@ -340,7 +343,7 @@ function World:draw()
     -- HUD
     G.setFont(FONT_NORMAL)
     G.setColor(0.8, 0.8, 0.8, 0.8)
-    G.print(string.format("%3d ENEMIES LEFT", #self.enemies), W - 52, 3.5)
+    G.print(string.format("%3d enemies left", #self.enemies), W - 52, 3.5)
 
     for i, h in ipairs(self.heroes) do
         local y = 4 + (i-1) * 6

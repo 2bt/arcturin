@@ -16,9 +16,11 @@ function Input:is_just_pressed(...)
 end
 
 
-Joystick = Input:new()
+Joystick = Input:new({
+    button_name_a = "[A]",
+})
 function Joystick:init(j)
-    self.name = j:getName()
+    self.name = j:getName():gsub(" gamepad$", "")
     self.joy  = j
 end
 function Joystick:update()
@@ -38,7 +40,10 @@ function Joystick:update()
 end
 
 
-Keyboard = Input:new({ name = "Keyboard" })
+Keyboard = Input:new({
+    name          = "Keyboard",
+    button_name_a = "[X]",
+})
 function Keyboard:update()
     self:set_state({
         left  = love.keyboard.isDown("left"),
@@ -53,7 +58,10 @@ function Keyboard:update()
 end
 
 
-Keyboard2 = Input:new({ name = "Keyboard 2"})
+Keyboard2 = Input:new({
+    name          = "Keyboard 2",
+    button_name_a = "[G]",
+})
 function Keyboard2:update()
     self:set_state({
         left  = love.keyboard.isDown("j"),

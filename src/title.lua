@@ -37,8 +37,8 @@ end
 
 
 
-local title_shader = G.newShader([[
-extern float time;
+local TITLE_SHADER = G.newShader([[
+uniform float time;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     vec3 c0 = vec3(0.75, 0.9, 1.0);
     vec3 c1 = vec3(0.51, 0.73, 0.81);
@@ -52,11 +52,17 @@ vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     o += vec3(shine);
     return vec4(o, 1.0);
 }]])
-local title_mesh
-local title_shadow_mesh
+local TITLE_MESH
+local TITLE_SHADOW_MESH
 do
     local b1 = MeshBuilder()
     local b2 = MeshBuilder()
+
+    -- shadow colors
+    local c1 = { 0.1, 0.2, 0.25 }
+    local c2 = { 0,   0,   0    }
+    local len = 15
+
 
     local function poly(p)
         b1:polygon(p)
@@ -68,13 +74,10 @@ do
             local x2 = p[i]
             local y2 = p[i + 1]
             if x2 < x1 then
-                local l = 15
-                local c1 = { 0.2, 0.2, 0.25 }
-                local c2 = { 0,   0,   0    }
-                local v1 = { x1, y1,     0, 0, unpack(c1) }
-                local v2 = { x1, y1 + l, 0, 0, unpack(c2) }
-                local v3 = { x2, y2 + l, 0, 0, unpack(c2) }
-                local v4 = { x2, y2,     0, 0, unpack(c1) }
+                local v1 = { x1, y1,       0, 0, unpack(c1) }
+                local v2 = { x1, y1 + len, 0, 0, unpack(c2) }
+                local v3 = { x2, y2 + len, 0, 0, unpack(c2) }
+                local v4 = { x2, y2,       0, 0, unpack(c1) }
                 table.append(b2.v, v1, v2, v3, v1, v3, v4)
             end
             x1, y1 = x2, y2
@@ -137,11 +140,33 @@ do
         v[4] = v[2]
     end
 
-    title_mesh = b1:build()
-    title_shadow_mesh = b2:build()
+    TITLE_MESH = b1:build()
+    TITLE_SHADOW_MESH = b2:build()
 end
 
 
+local FLARE_SHADER = G.newShader([[
+uniform float time;
+vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
+    uv.x += sin(time * 0.0027) * 0.1;
+    float o = 0.0;
+    o += 0.11 / (abs(uv.y) + 0.1 + pow(uv.x, 2.0));
+    o += 0.1 / (length(uv) + 0.2) * (sin(time * 0.02) * 0.4 + 0.6);
+    o -= 0.2;
+    //if (o <= 0.0) return vec4(1.0);
+    return vec4(1.0, 1.0, 1.0, o);
+}
+]])
+local FLARE_MESH
+do
+    local s = 50
+    FLARE_MESH = G.newMesh({
+        { -s, -s, -1, -1 },
+        {  s, -s,  1, -1 },
+        {  s,  s,  1,  1 },
+        { -s,  s, -1,  1 },
+    })
+end
 
 local tick
 local state
@@ -156,11 +181,10 @@ function Title:init()
 end
 function Title:update()
     tick = tick + 1
-    title_shader:send("time", tick)
 
     if state == "title" then
         for _, input in ipairs(Game.inputs) do
-            if input:is_just_pressed("a", "start") then
+            if input:is_just_pressed("a") then
                 -- add input to player inputs
                 table.clear(player_inputs)
                 player_inputs[1] = input
@@ -211,65 +235,76 @@ function Title:update()
     end
 end
 
-
-local function print_centered(text, x, y)
-    local font = G.getFont()
-    local width = font:getWidth(text)
-    G.print(text, x - width/2, y)
-end
-
-
 function Title:draw()
+    TITLE_SHADER:send("time", tick)
+    FLARE_SHADER:send("time", tick)
+
     G.clear(0, 0, 0)
 
-    G.push()
-    G.translate(W/2, 75)
-    G.scale(0.8)
+    -- title
     G.setColor(1, 1, 1)
-    G.draw(title_shadow_mesh)
-    G.setShader(title_shader)
-    G.draw(title_mesh)
+    G.draw(TITLE_SHADOW_MESH, W/2, 60, 0, 0.6)
+    G.setShader(TITLE_SHADER)
+    G.draw(TITLE_MESH, W/2, 60, 0, 0.6)
     G.setShader()
-    G.pop()
+
+
+    -- flare
+    G.setBlendMode("add")
+    G.setShader(FLARE_SHADER)
+    G.draw(FLARE_MESH, 94.8, 43, 2.075)
+    G.setShader()
+    G.setBlendMode("alpha")
+
+
 
     G.setColor(0.6, 0.6, 0.5)
     G.setFont(FONT_NORMAL)
+    local LINE_HEIGHT = FONT_NORMAL:getHeight()
+    local CHAR_WIDTH  = FONT_NORMAL:getWidth(" ")
+    local y = H/2 + 20
 
     if state == "title" then
 
-        print_centered("KEYBOARD CONTROLS", W/2, H/2 + 27)
-        print_centered(
-[[MOVE        LEFT/RIGHT
-DUCK        DOWN
-JUMP        X
-SHOOT       C
-FULLSCREEN  F
-]], W/2, H/2 + 40)
+
+        G.printf("Keyboard Controls", 0, y, W, "center")
+        y = y + LINE_HEIGHT * 2
+
+        G.print([[Move        [LEFT]/[RIGHT]
+Duck        [DOWN]
+Jump        [X]
+Shoot       [C]
+Fullscreen  [F] ]], W/2 - 13 * CHAR_WIDTH, y)
+
+        G.printf("[Keyboard:X]/[A] Start", FONT_SMALL, W/2-100, H-10, 200, "right")
+
 
     elseif state == "lobby" then
-
         -- G.line(W/2, H/2 + 20, W/2, H - 10)
-
-        local y = H/2 + 27
         local x = W/2 - 52
-        local LINE_HEIGHT = 7
+
         for i, input in ipairs(player_inputs) do
-            G.print(string.format("         PLAYER %d: %s", i, input.name),  x, y)
+            G.print(string.format("Press %s to start .....", input.button_name_a), W/2 - CHAR_WIDTH * 25, y)
+            G.print(string.format("Player %d (%s)", i, input.name), W/2, y)
             y = y + LINE_HEIGHT
         end
-        y = y + LINE_HEIGHT
 
-        local label  = "AVAILABLE DEVICES:"
-        local label2 = "                  "
-        for _, input in ipairs(Game.inputs) do
-            if not player_inputs[input] then
-                G.print(string.format("%s %s", label, input.name), x, y)
-                label = label2
-                y = y + LINE_HEIGHT
+        if #player_inputs < #Game.inputs then
+            G.print(string.rep("-", 50), W/2 - CHAR_WIDTH * 25, y)
+
+            y = y + LINE_HEIGHT
+            for _, input in ipairs(Game.inputs) do
+                if not player_inputs[input] then
+                    G.print(string.format("Press %s to join ......", input.button_name_a), W/2 - CHAR_WIDTH * 25, y)
+                    G.print(string.format("%s", input.name), W/2, y)
+                    y = y + LINE_HEIGHT
+                end
             end
         end
 
-    end
+        G.printf("[Keyboard:C]/[B] Leave", FONT_SMALL, W/2-100, H-10, 200, "left")
+        G.printf("[Keyboard:X]/[A] Join/Start", FONT_SMALL, W/2-100, H-10, 200, "right")
 
+    end
 
 end

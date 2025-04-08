@@ -18,7 +18,7 @@ COLORS = {
     { 0.58, 0.58, 0.58 },
 }
 
-FONT_SMALL  = G.newFont("assets/monofonto rg.otf", 1, "normal", 6)
+FONT_SMALL  = G.newFont("assets/monofonto rg.otf", 3, "normal", 6)
 FONT_NORMAL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
 
 
@@ -63,11 +63,6 @@ function Game:init()
 end
 function Game:add_joystick(j)
     table.insert(inputs, Joystick(j))
-
-    for _, input in ipairs(inputs) do
-        print(input.name)
-    end
-
 end
 function Game:remove_joystick(j)
     for i, input in ipairs(inputs) do
@@ -101,7 +96,6 @@ function Game:update()
     elseif blend > 0 then
         blend = math.max(blend - BLEND_SPEED, 0)
     end
-
 
     state:update()
 
