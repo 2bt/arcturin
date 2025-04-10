@@ -21,7 +21,6 @@ COLORS = {
 FONT_SMALL  = G.newFont("assets/monofonto rg.otf", 3, "normal", 6)
 FONT_NORMAL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
 
-
 require("helper")
 require("box")
 require("input")
@@ -39,73 +38,78 @@ require("meshgen")
 
 require("hero_bullet")
 require("hero")
+
+
+Scene = Object:new()
+function Scene:enter() end
+function Scene:leave() end
+function Scene:update() end
+function Scene:draw() end
+
+
 require("world")
 require("title")
 
 
 local BLEND_SPEED = 0.05
 
-
-local inputs = {
-    Keyboard,
-    -- Keyboard2, -- DEBUG
-}
-local next_state = Title
-local state      = nil
-local blend      = 1
-
-
 Game = {
-    inputs = inputs
+    inputs = {
+        Keyboard,
+        -- Keyboard2, -- DEBUG
+    },
+    next_scene    = Title,
+    current_scene = nil,
+    blend         = 1,
 }
 function Game:init()
-    self:change_state(Title:init())
+    self:change_scene(Title)
 end
 function Game:add_joystick(j)
-    table.insert(inputs, Joystick(j))
+    table.insert(self.inputs, Joystick(j))
 end
 function Game:remove_joystick(j)
     for i, input in ipairs(inputs) do
         if input.joy == j then
-            table.remove(inputs, i)
+            table.remove(self.inputs, i)
             return
         end
     end
 end
-function Game:change_state(state)
-    if next_state then return end
-    next_state = state
+function Game:change_scene(scene)
+    if self.next_scene then return end
+    self.next_scene = scene
 end
 function Game:update()
 
-    for _, input in ipairs(inputs) do
+    for _, input in ipairs(self.inputs) do
         input:update()
     end
 
     -- state transition
-    if next_state then
-        if blend == 1 then
-            state = next_state
-            next_state = nil
-            -- XXX: this blocks when generating level meshes
-            state:init()
+    if self.next_scene then
+        if self.blend == 1 then
+            if self.current_scene then self.current_scene:leave() end
+            self.next_scene:enter()
+            self.current_scene = self.next_scene
+            self.next_scene = nil
         end
-        if blend < 1 then
-            blend = math.min(blend + BLEND_SPEED, 1)
+        if self.blend < 1 then
+            self.blend = math.min(self.blend + BLEND_SPEED, 1)
         end
-    elseif blend > 0 then
-        blend = math.max(blend - BLEND_SPEED, 0)
+    elseif self.blend > 0 then
+        self.blend = math.max(self.blend - BLEND_SPEED, 0)
     end
 
-    state:update()
+    self.current_scene:update()
 
 end
 
 function Game:draw()
     G.clear(0, 0, 0)
 
-    state:draw()
+    self.current_scene:draw()
 
-    G.setColor(0, 0, 0, blend)
+    G.setColor(0, 0, 0, self.blend)
     G.rectangle("fill", 0, 0, W, H)
 end

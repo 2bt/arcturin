@@ -82,6 +82,12 @@ local STATE_SPAWN  = 5
 local HERO_MODEL = Model("assets/models/hero.model")
 
 Hero = Object:new({
+    lives              = 2,
+
+    respawn_x          = 0,
+    respawn_y          = 0,
+
+    hp                 = MAX_HP,
     prev_jump          = true,
     prev_shoot         = true,
     aim                = 0.5,
@@ -95,8 +101,10 @@ Hero = Object:new({
     vy                 = 0,
     vx                 = 0,
     dir                = 1,
-    hp                 = MAX_HP,
-    lives              = 2,
+
+    -- set on exit trigger
+    is_exiting         = false,
+    exit_dir           = 1,
 })
 local AIM_OFFSET
 do
@@ -116,21 +124,17 @@ do
     end
     AIM_OFFSET = { x = ox, y = oy }
 end
-function Hero:init(input, index, x, y)
-    self.input = input
-    self.index = index
-    input.hero = self
-    self.box = Box.make_above(x, y, 11, 23)
-    self.respawn_x = self.box.x
-    self.respawn_y = self.box.y
+function Hero:init(input, index)
+    self.input        = input
+    self.index        = index
+    self.box          = Box.make_above(0, 0, 11, 23)
     self.anim_manager = AnimationManager(HERO_MODEL)
-    self:set_state(STATE_SPAWN)
-    self.anim_manager:update()
 end
-function Hero:boost()
-    self.vy = -3
-    self:set_state(STATE_IN_AIR)
-
+-- place hero into the level
+function Hero:spawn(x, y)
+    self.respawn_x = x - self.box.w / 2
+    self.respawn_y = y - self.box.h
+    self:set_state(STATE_SPAWN)
 end
 
 function Hero:is_targetable()
@@ -151,7 +155,24 @@ function Hero:set_state(state)
     self.state = state
 
     if state == STATE_SPAWN then
+        self.hp                 = MAX_HP
+        self.prev_jump          = true
+        self.prev_shoot         = true
+        self.aim                = 0.5
+        self.aim_counter        = 0
+        self.hunk_counter       = 0
+        self.jump_control       = false
+        self.shoot_counter      = 0
+        self.invincible_counter = 0
+        self.dead_counter       = 0
+        self.vy                 = 0
+        self.vx                 = 0
+        self.dir                = 1
+        self.is_exiting         = false
+
         self.spawn_counter = 60
+        self.box.x         = self.respawn_x
+        self.box.y         = self.respawn_y
         self.anim_manager:play(ANIM_IDLE, 0)
         self.anim_manager:update()
 
@@ -176,9 +197,14 @@ function Hero:set_state(state)
     end
 end
 
+function Hero:boost()
+    self.vy = -3
+    self:set_state(STATE_IN_AIR)
+end
 
 function Hero:take_hit(damage, dir)
-    if self.invincible_counter > 0 then return end
+    if self.is_exiting then return false end
+    if self.invincible_counter > 0 then return false end
 
     -- knockback
     self.vy = -2
@@ -186,14 +212,15 @@ function Hero:take_hit(damage, dir)
     self:set_state(STATE_IN_AIR)
     self.anim_manager:play(ANIM_PAIN)
 
+    self.invincible_counter = 90
+
     self.hp = math.max(0, self.hp - ENEMY_DAMAGE)
     if self.hp == 0 then
         World:add_particle(HeroExplosion(self.box:get_center()))
         self:set_state(STATE_DEAD)
-        return
     end
 
-    self.invincible_counter = 90
+    return true
 end
 
 
@@ -202,27 +229,36 @@ local SAFE_GROUND = {
     [TILE_TYPE_STONE] = true,
 }
 
-
 function Hero:update()
-    local input = self.input.state
-    local jump  = input.a
-    local shoot = input.b
+    local jump  = self.input.state.a
+    local shoot = self.input.state.b
+    local dx    = self.input.state.dx
+    local dy    = self.input.state.dy
 
+    if self.is_exiting then
+        -- let hero walk out of the screen
+        jump  = false
+        shoot = false
+        dx    = self.exit_dir
+        dy    = 0
+        -- stop, once hero has left the screen
+        if self.box.x > World.map.w * TILE_SIZE
+        or self.box:right() < 0 then
+            Game:change_scene(LevelLoader)
+            return
+        end
+    end
 
     -- dead
     if self.state == STATE_DEAD then
         if self.dead_counter > 0 then
             self.dead_counter = self.dead_counter - 1
             if self.dead_counter == 0 and self.lives > 0 then
-                -- respawn
                 self.lives = self.lives - 1
-                self.hp    = MAX_HP
-                self.vx    = 0
-                self.vy    = 0
-                self.box.x = self.respawn_x
-                self.box.y = self.respawn_y
-                self.invincible_counter = 90
+
+                -- respawn
                 self:set_state(STATE_SPAWN)
+                self.invincible_counter = 90
             end
         end
         return
@@ -250,8 +286,8 @@ function Hero:update()
     if self.state == STATE_NORMAL then
 
         -- turn
-        if input.dx ~= 0 then
-            self.dir = input.dx
+        if dx ~= 0 then
+            self.dir = dx
             self.anim_manager:play(ANIM_RUN)
         else
             self.anim_manager:play(ANIM_IDLE)
@@ -259,7 +295,7 @@ function Hero:update()
 
         -- move
         local acc = ACCEL_GROUND
-        self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
+        self.vx = clamp(dx * MAX_SPEED, self.vx - acc, self.vx + acc)
         World:move_x(self.box, self.vx)
 
         -- jump
@@ -269,12 +305,12 @@ function Hero:update()
         end
 
         -- start hunkering
-        if input.dx == 0 and input.down then
+        if dx == 0 and dy == 1 then
             self:set_state(STATE_HUNKER)
         end
 
         -- start aiming
-        if input.dx == 0 and shoot then
+        if dx == 0 and shoot then
             self.aim_counter = self.aim_counter + 1
             if self.aim_counter > 20 then
                 self:set_state(STATE_AIM)
@@ -287,11 +323,11 @@ function Hero:update()
     elseif self.state == STATE_IN_AIR then
 
         -- turn
-        if input.dx ~= 0 then self.dir = input.dx end
+        if dx ~= 0 then self.dir = dx end
 
         -- move
         local acc = ACCEL_AIR
-        self.vx = clamp(input.dx * MAX_SPEED, self.vx - acc, self.vx + acc)
+        self.vx = clamp(dx * MAX_SPEED, self.vx - acc, self.vx + acc)
         World:move_x(self.box, self.vx)
 
         if self.jump_control then
@@ -305,15 +341,15 @@ function Hero:update()
     elseif self.state == STATE_HUNKER then
         if self.hunk_counter > 0 then
             self.hunk_counter = self.hunk_counter - 1
-            if input.dx ~= 0 then
+            if dx ~= 0 then
                 self.hunk_counter = 0
             end
         end
 
         -- turn
-        if input.dx ~= 0 then self.dir = input.dx end
+        if dx ~= 0 then self.dir = dx end
 
-        if not input.down and self.hunk_counter == 0 then
+        if dy ~= 1 and self.hunk_counter == 0 then
             self:set_state(STATE_NORMAL)
         end
 
@@ -335,7 +371,7 @@ function Hero:update()
         end
 
         if self.shoot_counter == 0 then
-            self.aim = self.aim - self.dir * input.dx * (1/16)
+            self.aim = self.aim - self.dir * dx * (1/16)
             if self.aim > 1.0 then
                 self.aim = 2 - self.aim
                 self.dir = -self.dir
@@ -365,7 +401,7 @@ function Hero:update()
         end
         if self.state == STATE_IN_AIR and not in_air then
             -- bend knees to dampen landing
-            if falling_fast and input.dx == 0 then
+            if falling_fast and dx == 0 then
                 self.hunk_counter = 5
                 self:set_state(STATE_HUNKER)
             else
@@ -378,15 +414,18 @@ function Hero:update()
     end
 
 
-    -- stay inside camera view
-    if self.box.x < World.camera.x then
-        self.box.x = World.camera.x
+    if not self.is_exiting then
+        -- stay inside camera view
+        if self.box.x < World.camera.x then
+            self.box.x = World.camera.x
+        end
+        if self.box:right() > World.camera:right() then
+            self.box.x = World.camera:right() - self.box.w
+        end
     end
-    if self.box:right() > World.camera:right() then
-        self.box.x = World.camera:right() - self.box.w
-    end
+
+    -- move hero up to position of highest other player
     if #World.heroes > 1 and self.box.y > World.camera:bottom() + 5 then
-        -- move hero up to position of highest other player
         local top_h = self
         for _, h in ipairs(World.heroes) do
             if h.state ~= STATE_DEAD and h.box.y < top_h.box.y then
@@ -408,10 +447,9 @@ function Hero:update()
     end
 
 
+    -- invincibility
     if self.invincible_counter > 0 then
         self.invincible_counter = self.invincible_counter - 1
-
-        -- particles
         for _ = 1, 4 do
             local x = self.box.x + randf(-2, self.box.w + 2)
             local y = self.box.y + randf(-3, self.box.h + 1)
@@ -424,10 +462,11 @@ function Hero:update()
     for _, e in ipairs(World.enemies) do
         if e.active then
             local x, y = e:hero_collision(self)
-            if x then any_enemy_collision = true end
-            if x and self.invincible_counter == 0 then
-                World:add_particle(FlashParticle(x, y, 10))
-                self:take_hit(ENEMY_DAMAGE, math.sign(self.box:center_x() - x))
+            if x then
+                any_enemy_collision = true
+                if self:take_hit(ENEMY_DAMAGE, math.sign(self.box:center_x() - x)) then
+                    World:add_particle(FlashParticle(x, y, 10))
+                end
             end
         end
     end
@@ -444,10 +483,17 @@ function Hero:update()
     end
 
 
+
+    -- check for level exit
+    if World.map.exit and self.box:overlaps(World.map.exit) then
+        self.is_exiting = true
+        self.exit_dir   = math.sign(World.map.exit.x - W/2)
+    end
+
+
     self.prev_jump  = jump
     self.prev_shoot = shoot
 
-    -- animation stuff
     self.anim_manager:update()
 end
 

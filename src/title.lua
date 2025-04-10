@@ -59,8 +59,8 @@ do
     local b2 = MeshBuilder()
 
     -- shadow colors
-    local c1 = { 0.1, 0.2, 0.25 }
-    local c2 = { 0,   0,   0    }
+    local c1 = { 0.1, 0.2, 0.25, 1 }
+    local c2 = { 0, 0, 0, 0 }
     local len = 15
 
 
@@ -89,17 +89,16 @@ do
     local t = Turtle()
     -- A
     local q = 80/145
-    t:init(x - 85, y + 60 + 40):mv(80, -145):mv(-12, 45):mv(-50*q, 50)
+    t:init(x - 85, y + 60 + 40):mv(80, -145):mv(-12, 45)
+    t:mv(-30*q, 30):right(20):down(10):left(20+10*q)
     local d = 30 * (1-q)
     local xx = t.x
     local yy = t.y
     for i = 4, 50-4, 4 do
         t:add_vertex(xx - i * mix(q, 1, i/90), yy + i)
     end
-
     poly(t.data)
-    local q = 22.07
-    t:init(x - 5, y - 45):down(105):left(12):up(20):left(q):up(10):right(q):up(30)
+    t:init(x - 5, y - 45):down(105):left(12):up(60)
     poly(t.data)
 
     -- R
@@ -150,9 +149,9 @@ uniform float time;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     uv.x += sin(time * 0.0027) * 0.1;
     float o = 0.0;
-    o += 0.11 / (abs(uv.y) + 0.1 + uv.x * uv.x);
-    o += 0.1 / (length(uv) + 0.2) * (sin(time * 0.02) * 0.4 + 0.6);
-    o -= 0.2;
+    o += 0.1 / (abs(uv.y) + 0.1 + uv.x * uv.x);
+    o += 0.04 / (length(uv) + 0.13) * (0.5 - cos(time * 0.005) * 0.5);
+    o -= 0.1;
     //if (o <= 0.0) return vec4(1.0);
     return vec4(1.0, 1.0, 1.0, o);
 }
@@ -168,49 +167,106 @@ do
     })
 end
 
-local tick
-local state
-local player_inputs = {}
-Title = {
-    player_inputs = player_inputs,
-}
+
+LevelLoader = Scene:new({
+    levels = {
+        -- "assets/test-map.json",
+        "assets/map.json",
+    },
+
+})
+function LevelLoader:init(heroes)
+    self.level_number = 1
+    self.state        = "blend"
+    self.heroes       = heroes
+end
+function LevelLoader:leave()
+    self.level_number = self.level_number + 1
+    self.state        = "blend"
+end
+function LevelLoader:update()
+
+    if self.state == "blend" then
+        if Game.blend == 0 then
+            self.state = "load"
+        end
+    elseif self.state == "load" then
+
+        local map = Map(self.levels[self.level_number])
+        World:init(self.heroes, map)
+
+        self.state = "ready"
+    elseif self.state == "ready" then
+        for _, input in ipairs(Title.player_inputs) do
+            if input:is_just_pressed("a", "start") then
+                Game:change_scene(World)
+            end
+        end
+    end
+
+end
+function LevelLoader:draw()
+    G.setColor(0.6, 0.6, 0.5)
+    G.setFont(FONT_NORMAL)
+
+    G.printf(string.format("Level %d", self.level_number), 0, H/2, W, "center")
+    if self.state == "load" then
+        G.printf(string.format("Loading...", self.state), 0, H/2 + 20, W, "center")
+    elseif self.state == "ready" then
+        G.printf(string.format("Ready", self.state), 0, H/2 + 20, W, "center")
+    end
+end
+
+
+Title = Scene:new()
 function Title:init()
-    tick  = 0
-    state = "title"
-    table.clear(player_inputs)
+    self.tick          = 0
+    self.state         = "title"
+    self.player_inputs = {}
+end
+Title:init()
+
+function Title:start_game()
+
+    -- init heroes
+    local heroes = {}
+    for i, input in ipairs(self.player_inputs) do
+        heroes[i] = Hero(input, i)
+    end
+
+    LevelLoader:init(heroes)
+    Game:change_scene(LevelLoader)
 end
 function Title:update()
-    tick = tick + 1
+    self.tick = self.tick + 1
 
-    if state == "title" then
+    if self.state == "title" then
         for _, input in ipairs(Game.inputs) do
             if input:is_just_pressed("a", "start") then
                 -- add input to player inputs
-                table.clear(player_inputs)
-                player_inputs[1] = input
-                player_inputs[input] = true
+                self.player_inputs = { input, [input] = true }
                 if #Game.inputs == 1 then
                     -- start game
-                    Game:change_state(World)
+                    self:start_game()
                 else
                     -- enter lobby
-                    state = "lobby"
+                    self.state = "lobby"
                 end
                 break
             end
         end
-    elseif state == "lobby" then
+    elseif self.state == "lobby" then
 
         -- check for disconnecting inputs
         local i = 1
-        while i <= #player_inputs do
-            local input = player_inputs[i]
+        while i <= #self.player_inputs do
+            local input = self.player_inputs[i]
             if not input.joy or input.joy:isConnected() then
                 i = i + 1
             else
-                table.remove(player_inputs, i)
-                if #player_inputs == 0 then
-                    state = "title"
+                table.remove(self.player_inputs, i)
+                if #self.player_inputs == 0 then
+                    self.state = "title"
                 end
             end
         end
@@ -218,24 +274,24 @@ function Title:update()
         for _, input in ipairs(Game.inputs) do
 
             if input:is_just_pressed("a", "start") then
-                if player_inputs[input] then
+                if self.player_inputs[input] then
                     -- start game
-                    Game:change_state(World)
+                    self:start_game()
                 else
                     -- add player
-                    table.insert(player_inputs, input)
-                    player_inputs[input] = true
+                    table.insert(self.player_inputs, input)
+                    self.player_inputs[input] = true
                 end
             end
 
-            if player_inputs[input] and input:is_just_pressed("b") then
+            if self.player_inputs[input] and input:is_just_pressed("b") then
                 -- remove player
-                for i, pi in ipairs(player_inputs) do
+                for i, pi in ipairs(self.player_inputs) do
                     if pi == input then
-                        table.remove(player_inputs, i)
-                        player_inputs[input] = nil
-                        if #player_inputs == 0 then
-                            state = "title"
+                        table.remove(self.player_inputs, i)
+                        self.player_inputs[input] = nil
+                        if #self.player_inputs == 0 then
+                            self.state = "title"
                         end
                         break
                     end
@@ -244,14 +300,12 @@ function Title:update()
 
         end
 
-
-
     end
 end
 
 function Title:draw()
-    TITLE_SHADER:send("time", tick)
-    FLARE_SHADER:send("time", tick)
+    TITLE_SHADER:send("time", self.tick)
+    FLARE_SHADER:send("time", self.tick)
 
     -- title
     G.setColor(1, 1, 1)
@@ -274,7 +328,7 @@ function Title:draw()
     local CHAR_WIDTH  = FONT_NORMAL:getWidth(" ")
     local y = H/2 + 20
 
-    if state == "title" then
+    if self.state == "title" then
 
 
         G.printf("Keyboard Controls", 0, y, W, "center")
@@ -289,11 +343,11 @@ Fullscreen  [F] ]], W/2 - 13 * CHAR_WIDTH, y)
         G.printf("[Keyboard:X]/[A] Start", FONT_SMALL, W/2-100, H-10, 200, "right")
 
 
-    elseif state == "lobby" then
+    elseif self.state == "lobby" then
         -- G.line(W/2, H/2 + 20, W/2, H - 10)
         local x = W/2 - 52
 
-        for i, input in ipairs(player_inputs) do
+        for i, input in ipairs(self.player_inputs) do
             local txt = string.format("Player %d (%s)", i, input.name)
             local pad = string.rep(".", 30 - #txt)
             G.print(string.format("%s %s Press %s to start", txt, pad, input.button_name_a),
@@ -301,12 +355,12 @@ Fullscreen  [F] ]], W/2 - 13 * CHAR_WIDTH, y)
             y = y + LINE_HEIGHT
         end
 
-        if #player_inputs < #Game.inputs then
+        if #self.player_inputs < #Game.inputs then
             G.print(string.rep("-", 50), W/2 - CHAR_WIDTH * 25, y)
 
             y = y + LINE_HEIGHT
             for _, input in ipairs(Game.inputs) do
-                if not player_inputs[input] then
+                if not self.player_inputs[input] then
 
                     local txt = input.name
                     local pad = string.rep(".", 30 - #txt)

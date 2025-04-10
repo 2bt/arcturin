@@ -47,10 +47,11 @@ function WalkerEnemy:sub_update()
             end
 
             -- jump up single tile
-            local x = self.box:center_x() + self.dir * 10
-            local t1 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1)
-            local t2 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1 - TILE_SIZE)
-            local t3 = World.map.main:get_tile_at_world_pos(x, self.box:bottom() - 1 - TILE_SIZE * 2)
+            local x = self.box:center_x() + self.dir * 14
+            local y = self.box:bottom() - 1
+            local t1 = World.map.main:get_tile_at_world_pos(x, y)
+            local t2 = World.map.main:get_tile_at_world_pos(x, y - TILE_SIZE)
+            local t3 = World.map.main:get_tile_at_world_pos(x, y - TILE_SIZE * 2)
             if t1 ~= TILE_TYPE_EMPTY and t1 ~= TILE_TYPE_BRIDGE
             and t2 == TILE_TYPE_EMPTY and t3 == TILE_TYPE_EMPTY then
                 if random(1, 3) == 1 then

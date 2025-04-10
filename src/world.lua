@@ -54,29 +54,22 @@ end
 
 
 
-World = {}
-function World:init()
+World = Scene:new({
+    active_area = Box(0, 0, W + TILE_SIZE * 2, H + TILE_SIZE * 2),
+})
+function World:init(heroes, map)
+    self.heroes        = heroes
+    self.map           = map
+    self.enemies       = map.enemies
     self.solids        = {}
     self.active_solids = {}
-    self.heroes        = {}
     self.hero_bullets  = {}
-    self.enemies       = {}
     self.enemy_bullets = {}
     self.particles     = {}
 
-
-    local ACTIVE_AREA_PADDING = TILE_SIZE
-    self.active_area = Box(0, 0, W + ACTIVE_AREA_PADDING * 2, H + ACTIVE_AREA_PADDING * 2)
-
-    -- XXX: loading the map will fill up actors and solids
-    self.map = Map("assets/map.json")
-    -- self.map = Map("assets/test-map.json")
-
-    -- add heroes
-    for _, input in ipairs(Title.player_inputs) do
-        local index = #self.heroes + 1
-        local hero  = Hero(input, index, self.map.hero_x - (index - 1) * 8, self.map.hero_y)
-        self.heroes[index] = hero
+    -- spawn heroes
+    for i, h in ipairs(self.heroes) do
+        h:spawn(self.map.hero_x - (i - 1) * 8, self.map.hero_y)
     end
 
     -- init camera
@@ -95,10 +88,7 @@ function World:init()
     self.camera:set_center(hero_box:center_x() + ox, hero_box:center_y())
 end
 
-
-function World:add_solid(solid)         table.insert(self.solids, solid)         end
 function World:add_hero_bullet(bullet)  table.insert(self.hero_bullets, bullet)  end
-function World:add_enemy(enemy)         table.insert(self.enemies, enemy)        end
 function World:add_enemy_bullet(bullet) table.insert(self.enemy_bullets, bullet) end
 function World:add_particle(particle)   table.insert(self.particles, particle)   end
 
@@ -184,8 +174,9 @@ function World:update_camera()
     end
     if not hero_box then return end
     local hx, hy = hero_box:get_center()
-    hx = clamp(hx, W/2 + TILE_SIZE/2, self.map.w * TILE_SIZE - W/2 - TILE_SIZE/2)
-    hy = clamp(hy, H/2 + TILE_SIZE/2, self.map.h * TILE_SIZE - H/2 - TILE_SIZE/2)
+    hx = clamp(hx, W/2 + TILE_SIZE, self.map.w * TILE_SIZE - W/2 - TILE_SIZE)
+    hy = clamp(hy, H/2 + TILE_SIZE, self.map.h * TILE_SIZE - H/2 - TILE_SIZE)
+
 
     local min_border_x = math.min(hero_box.x - self.camera.x, self.camera:right() - hero_box:right())
     local min_border_y = math.min(hero_box.y - self.camera.y, self.camera:bottom() - hero_box:bottom())
@@ -300,7 +291,8 @@ function World:update()
         end
     end
     if gameover then
-        Game:change_state(Title)
+        Title:init()
+        Game:change_scene(Title)
     end
 end
 

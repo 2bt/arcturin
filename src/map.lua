@@ -119,9 +119,9 @@ end
 Map = Object:new()
 function Map:init(file_name)
     self.file_name          = file_name
-    self.tick               = 0
     self.bridge_offsets     = {}
     self.new_bridge_offsets = {}
+
 
     local raw = love.filesystem.read(file_name)
     local data = json.decode(raw)
@@ -131,20 +131,28 @@ function Map:init(file_name)
     self.main       = nil
     self.background = nil
 
+    self.enemies = {}
+    self.exit    = nil
 
     for _, l in ipairs(data.layers) do
-        if l.name == "objects" then
+
+
+        if l.name == "stuff" then
             for _, o in ipairs(l.objects) do
-                local x = o.x + o.width / 2
-                local y = o.y + o.height
                 if o.name == "hero" then
-                    self.hero_x = x
-                    self.hero_y = y
-                elseif ENEMY_MAP[o.name] then
-                    World:add_enemy(ENEMY_MAP[o.name](x, y))
+                    self.hero_x = o.x + o.width / 2
+                    self.hero_y = o.y + o.height
+                elseif o.name == "exit" then
+                    self.exit = Box(o.x, o.y, o.width, o.height)
                 else
                     error(string.format("unknown object [%s]", o.name))
                 end
+            end
+
+        elseif l.name == "enemies" then
+            for _, o in ipairs(l.objects) do
+                local e = ENEMY_MAP[o.name](o.x + o.width / 2, o.y + o.height)
+                table.insert(self.enemies, e)
             end
         else
             if self.w ~= l.width or self.h ~= l.height then
@@ -164,6 +172,12 @@ function Map:collision(box, overlap_func, amount)
     local c2 = math.floor(box:right() / TILE_SIZE)
     local r1 = math.floor(box.y / TILE_SIZE)
     local r2 = math.floor(box:bottom() / TILE_SIZE)
+
+    c1 = clamp(c1, 0, self.w-1)
+    c2 = clamp(c2, 0, self.w-1)
+    r1 = clamp(r1, 0, self.h-1)
+    r2 = clamp(r2, 0, self.h-1)
+
 
     local b = Box(0, 0, TILE_SIZE, TILE_SIZE)
     local overlap = 0
@@ -228,7 +242,6 @@ function Map:update_bridge_offsets(x, y)
 end
 
 function Map:update()
-    self.tick = self.tick + 1
 
     -- bridge
     local prev_bridge_offsets = self.bridge_offsets
