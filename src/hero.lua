@@ -84,10 +84,9 @@ local HERO_MODEL = Model("assets/models/hero.model")
 Hero = Object:new({
     lives              = 2,
 
+    hp                 = MAX_HP,
     respawn_x          = 0,
     respawn_y          = 0,
-
-    hp                 = MAX_HP,
     prev_jump          = true,
     prev_shoot         = true,
     aim                = 0.5,
@@ -101,7 +100,6 @@ Hero = Object:new({
     vy                 = 0,
     vx                 = 0,
     dir                = 1,
-
     -- set on exit trigger
     is_exiting         = false,
     exit_dir           = 1,
@@ -141,7 +139,7 @@ function Hero:is_targetable()
     return self.state ~= STATE_DEAD and self.state ~= STATE_SPAWN
 end
 function Hero:is_gameover()
-    return self.lives == 0 and self.state == STATE_DEAD and self.dead_counter == 0
+    return self.lives == 0 and self.state == STATE_DEAD
 end
 
 function Hero:set_state(state)

@@ -53,11 +53,15 @@ local function draw_alive_and_with_box(t)
 end
 
 
+local STATE_PLAY     = 1
+local STATE_GAMEOVER = 2
+
 
 World = Scene:new({
     active_area = Box(0, 0, W + TILE_SIZE * 2, H + TILE_SIZE * 2),
 })
 function World:init(heroes, map)
+    self.state         = STATE_PLAY
     self.heroes        = heroes
     self.map           = map
     self.enemies       = map.enemies
@@ -67,21 +71,21 @@ function World:init(heroes, map)
     self.enemy_bullets = {}
     self.particles     = {}
 
-    -- spawn heroes
-    for i, h in ipairs(self.heroes) do
-        h:spawn(self.map.hero_x - (i - 1) * 8, self.map.hero_y)
-    end
+    self.gameover_tween = Tween(0):tween(0, 30):tween(1, 100):tween(1, 60)
 
-    -- init camera
-    local hero_box
+    -- spawn heroes and init camera
+    local hero_box = nil
     local ox = 0
     for i, h in ipairs(self.heroes) do
-        local hx = h.box:center_x()
-        local hy = h.box:bottom() - 12
-        if i == 1 then
-            hero_box = Box(hx, hy, 0, 0)
-        else
-            hero_box:grow_to_fit(hx, hy)
+        if not h:is_gameover() then
+            h:spawn(self.map.hero_x - (i - 1) * 8, self.map.hero_y)
+            local hx = h.box:center_x()
+            local hy = h.box:bottom() - 12
+            if not hero_box then
+                hero_box = Box(hx, hy, 0, 0)
+            else
+                hero_box:grow_to_fit(hx, hy)
+            end
         end
     end
     self.camera = Box(0, 0, W, H)
@@ -283,16 +287,29 @@ function World:update()
     TT:stop()
 
 
-    local gameover = true
-    for _, h in ipairs(self.heroes) do
-        if not h:is_gameover() then
-            gameover = false
-            break
+
+    if self.state == STATE_PLAY then
+        -- XXX: make this better
+        -- enter game-over state
+        -- show "GAME OVER"
+        -- wait for keypress
+        local gameover = true
+        for _, h in ipairs(self.heroes) do
+            if not h:is_gameover() then
+                gameover = false
+                break
+            end
         end
-    end
-    if gameover then
-        Title:init()
-        Game:change_scene(Title)
+        if gameover then
+            self.state = STATE_GAMEOVER
+            -- TODO: highscore
+            Title:init()
+        end
+    elseif self.state == STATE_GAMEOVER then
+        self.gameover_tween:update()
+        if self.gameover_tween:is_done() then
+            Game:change_scene(Title)
+        end
     end
 end
 
@@ -354,6 +371,14 @@ function World:draw()
             end
         end
     end
+
+    if self.state == STATE_GAMEOVER then
+        G.setFont(FONT_BIG)
+
+        G.setColor(0.8, 0.8, 0.8, self.gameover_tween.value)
+        G.printf("GAME OVER", 0, H/2 - FONT_BIG:getHeight()/2, W, "center")
+    end
+
 
 
     TT:stop()

@@ -148,12 +148,10 @@ local FLARE_SHADER = G.newShader([[
 uniform float time;
 vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
     uv.x += sin(time * 0.0027) * 0.1;
-    float o = 0.0;
-    o += 0.1 / (abs(uv.y) + 0.1 + uv.x * uv.x);
-    o += 0.04 / (length(uv) + 0.13) * (0.5 - cos(time * 0.005) * 0.5);
+    float o = 0.1 / (abs(uv.y) + 0.09 + uv.x * uv.x);
     o -= 0.1;
     //if (o <= 0.0) return vec4(1.0);
-    return vec4(1.0, 1.0, 1.0, o);
+    return vec4(vec3(1.2, 1.1, 1.0) * o, 1.0);
 }
 ]])
 local FLARE_MESH
@@ -185,17 +183,14 @@ function LevelLoader:leave()
     self.state        = "blend"
 end
 function LevelLoader:update()
-
     if self.state == "blend" then
         if Game.blend == 0 then
             self.state = "load"
         end
     elseif self.state == "load" then
-
-        local map = Map(self.levels[self.level_number])
-        World:init(self.heroes, map)
-
         self.state = "ready"
+        local map  = Map(self.levels[self.level_number])
+        World:init(self.heroes, map)
     elseif self.state == "ready" then
         for _, input in ipairs(Title.player_inputs) do
             if input:is_just_pressed("a", "start") then
@@ -209,11 +204,11 @@ function LevelLoader:draw()
     G.setColor(0.6, 0.6, 0.5)
     G.setFont(FONT_NORMAL)
 
-    G.printf(string.format("Level %d", self.level_number), 0, H/2, W, "center")
+    G.printf(string.format("Level %d", self.level_number), 0, H/2 - 10, W, "center")
     if self.state == "load" then
-        G.printf(string.format("Loading...", self.state), 0, H/2 + 20, W, "center")
+        G.printf(string.format("Loading...", self.state), 0, H/2 + 10, W, "center")
     elseif self.state == "ready" then
-        G.printf(string.format("Ready", self.state), 0, H/2 + 20, W, "center")
+        G.printf(string.format("Ready", self.state), 0, H/2 + 10, W, "center")
     end
 end
 

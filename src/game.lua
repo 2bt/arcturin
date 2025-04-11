@@ -20,6 +20,8 @@ COLORS = {
 
 FONT_SMALL  = G.newFont("assets/monofonto rg.otf", 3, "normal", 6)
 FONT_NORMAL = G.newFont("assets/monofonto rg.otf", 5, "normal", 6)
+FONT_BIG    = G.newFont("assets/monofonto rg.otf", 15, "normal", 6)
+
 
 require("helper")
 require("box")
@@ -51,7 +53,7 @@ require("world")
 require("title")
 
 
-local BLEND_SPEED = 0.05
+local BLEND_SPEED = 0.025
 
 Game = {
     inputs = {
@@ -63,7 +65,6 @@ Game = {
     blend         = 1,
 }
 function Game:init()
-    self:change_scene(Title)
 end
 function Game:add_joystick(j)
     table.insert(self.inputs, Joystick(j))
