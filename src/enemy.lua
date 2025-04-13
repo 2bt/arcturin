@@ -86,5 +86,6 @@ end
 
 
 require("enemies.ufo_enemy")
+require("enemies.fly_enemy")
 require("enemies.walker_enemy")
 require("enemies.dragon_enemy")

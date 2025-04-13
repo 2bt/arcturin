@@ -37,23 +37,16 @@ require("particle")
 require("solid")
 require("map")
 require("meshgen")
-
 require("hero_bullet")
 require("hero")
-
-
-Scene = Object:new()
-function Scene:enter() end
-function Scene:leave() end
-function Scene:update() end
-function Scene:draw() end
-
-
-require("world")
 require("title")
+require("world")
 
 
 local BLEND_SPEED = 0.025
+-- DEBUG
+local BLEND_SPEED = 0.5
+
 
 Game = {
     inputs = {
@@ -82,10 +75,7 @@ function Game:change_scene(scene)
     self.next_scene = scene
 end
 function Game:update()
-
-    for _, input in ipairs(self.inputs) do
-        input:update()
-    end
+    for _, input in ipairs(self.inputs) do input:update() end
 
     -- state transition
     if self.next_scene then
@@ -103,7 +93,6 @@ function Game:update()
     end
 
     self.current_scene:update()
-
 end
 
 function Game:draw()

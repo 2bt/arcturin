@@ -13,6 +13,7 @@ local MAX_BRIDGE_OFFSET = 2
 
 local ENEMY_MAP = {
     ["ufo"]    = UfoEnemy,
+    ["fly"]    = FlyEnemy,
     ["walker"] = WalkerEnemy,
     ["dragon"] = DragonEnemy,
 }

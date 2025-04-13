@@ -139,7 +139,7 @@ function Hero:is_targetable()
     return self.state ~= STATE_DEAD and self.state ~= STATE_SPAWN
 end
 function Hero:is_gameover()
-    return self.lives == 0 and self.state == STATE_DEAD
+    return self.state == STATE_DEAD and self.lives == 0
 end
 
 function Hero:set_state(state)
