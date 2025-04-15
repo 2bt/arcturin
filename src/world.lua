@@ -8,8 +8,8 @@ vec4 effect(vec4 c, Image t, vec2 uv, vec2 p) {
 ]])
 local BACKGROUND_MESH
 do
-    local c1 = { 0.18,  0.22, 0.35 }
-    local c2 = { 0.1,   0.18, 0.18 }
+    local c1 = { 0.18, 0.22, 0.38 }
+    local c2 = { 0.12, 0.21, 0.22 }
     BACKGROUND_MESH = G.newMesh({
         { 0, 0, 0, 0, unpack(c1) },
         { W, 0, 0, 0, unpack(c1) },

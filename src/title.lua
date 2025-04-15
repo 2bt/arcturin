@@ -8,8 +8,8 @@ function Scene:draw() end
 LevelLoader = Scene:new({
     levels = {
         -- "assets/test-map.json",
-        -- "assets/test-map.json",
-        "assets/map.json",
+        "assets/level-1.json",
+        "assets/level-2.json",
     },
 })
 function LevelLoader:init(heroes)

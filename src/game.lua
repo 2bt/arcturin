@@ -45,7 +45,7 @@ require("world")
 
 local BLEND_SPEED = 0.025
 -- DEBUG
-local BLEND_SPEED = 0.5
+-- local BLEND_SPEED = 0.5
 
 
 Game = {
