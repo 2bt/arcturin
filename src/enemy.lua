@@ -43,6 +43,11 @@ function Enemy:update()
     self.tick = self.tick + 1
     self.flash = math.max(0, self.flash - 0.4)
     self:sub_update()
+
+
+    if self.box.y > World.map.h * TILE_SIZE then
+        self:die()
+    end
 end
 function Enemy:draw()
     FLASH_SHADER:send("flash", self.flash)
@@ -62,8 +67,9 @@ function Enemy:take_hit(power)
     end
 end
 function Enemy:die()
-    self.alive = false
+    if not self.alive then return end
     make_explosion(self.box:get_center())
+    self.alive = false
 end
 
 

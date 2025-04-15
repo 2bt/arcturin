@@ -22,6 +22,11 @@ function WalkerEnemy:init(x, y)
     self.state        = STATE_WALK
     self.anim_manager = AnimationManager(MODEL)
 end
+function WalkerEnemy:activate()
+    if self.state == STATE_WALK then
+        self.dir = self.box:center_x() > World.camera:center_x() and -1 or 1
+    end
+end
 function WalkerEnemy:sub_update()
 
     if self.state == STATE_WALK then

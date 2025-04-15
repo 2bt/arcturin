@@ -488,6 +488,9 @@ function Hero:update()
         self.exit_dir   = math.sign(World.map.exit.x - W/2)
     end
 
+    if self.box.y > World.map.h * TILE_SIZE then
+        self:set_state(STATE_DEAD)
+    end
 
     self.prev_jump  = jump
     self.prev_shoot = shoot

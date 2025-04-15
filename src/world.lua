@@ -164,8 +164,8 @@ function World:update_camera()
     local hero_box
     for i, h in ipairs(self.heroes) do
         if not h:is_gameover() then
-            local hx = h.box:center_x()
-            local hy = h.box:bottom() - 12
+            local hx = clamp(h.box:center_x(), TILE_SIZE, (self.map.w - 1) * TILE_SIZE)
+            local hy = clamp(h.box:bottom() - 12, TILE_SIZE, (self.map.h - 1) * TILE_SIZE)
             if hy > oy then
                 hy = oy + (hy - oy) * 0.9
             end
@@ -177,6 +177,7 @@ function World:update_camera()
         end
     end
     if not hero_box then return end
+
     local hx, hy = hero_box:get_center()
     hx = clamp(hx, W/2 + TILE_SIZE, self.map.w * TILE_SIZE - W/2 - TILE_SIZE)
     hy = clamp(hy, H/2 + TILE_SIZE, self.map.h * TILE_SIZE - H/2 - TILE_SIZE)
