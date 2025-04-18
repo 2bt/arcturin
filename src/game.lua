@@ -63,7 +63,7 @@ function Game:add_joystick(j)
     table.insert(self.inputs, Joystick(j))
 end
 function Game:remove_joystick(j)
-    for i, input in ipairs(inputs) do
+    for i, input in ipairs(self.inputs) do
         if input.joy == j then
             table.remove(self.inputs, i)
             return
