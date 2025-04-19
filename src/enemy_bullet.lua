@@ -73,3 +73,17 @@ function FireBall:draw()
     G.setColor(mix({1, 0.4, 0.3, 0.7}, {1, 0.9, 0.3, 0.2}, math.sin(self.tick * 0.5) * 0.5 + 0.5))
     G.draw(FIREBALL_MESH, self.box:center_x(), self.box:center_y(), 0, math.sign(self.vx))
 end
+
+
+
+CannonBall = EnemyBullet:new()
+function CannonBall:init(x, y, vx, vy)
+    self.box = Box.make_centered(x, y, 3, 3)
+    self.vx  = vx
+    self.vy  = vy
+end
+function CannonBall:draw()
+    G.setColor(mix({1, 0.3, 0.6, 0.7}, {1, 0.6, 0.9, 1}, math.sin(self.tick * 0.7) * 0.5 + 0.5))
+    G.circle("fill", self.box:center_x(), self.box:center_y(), 3)
+    -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
+end

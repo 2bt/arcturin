@@ -94,7 +94,7 @@ function DragonEnemy:sub_update()
 
         -- wake up if hero comes too close
         local h, d = World:get_nearest_hero(self.tx, self.ty)
-        if h and d < 30 then
+        if h and d < 35 then
             self:set_state(STATE_FIGHT)
         end
 

@@ -16,6 +16,7 @@ local ENEMY_MAP = {
     ["fly"]    = FlyEnemy,
     ["walker"] = WalkerEnemy,
     ["dragon"] = DragonEnemy,
+    ["cannon"] = CannonEnemy,
 }
 
 
@@ -117,6 +118,73 @@ function Layer:draw()
 end
 
 
+function Layer:raycast(x0, y0, x1, y1)
+    local dx, dy = x1 - x0, y1 - y0
+    if dx == 0 and dy == 0 then return nil end
+
+    local stepX  = (dx >= 0) and 1 or -1
+    local stepY  = (dy >= 0) and 1 or -1
+
+    local mapX   = math.floor(x0 / TILE_SIZE)
+    local mapY   = math.floor(y0 / TILE_SIZE)
+    local endX   = math.floor(x1 / TILE_SIZE)
+    local endY   = math.floor(y1 / TILE_SIZE)
+
+    local invDx  = (dx ~= 0) and 1 / dx or math.huge
+    local invDy  = (dy ~= 0) and 1 / dy or math.huge
+    local deltaTX = math.abs(TILE_SIZE * invDx)
+    local deltaTY = math.abs(TILE_SIZE * invDy)
+
+    local tMaxX = (dx >= 0)
+        and ((mapX + 1) * TILE_SIZE - x0) * invDx
+        or  (x0 - mapX * TILE_SIZE) * -invDx
+
+    local tMaxY = (dy >= 0)
+        and ((mapY + 1) * TILE_SIZE - y0) * invDy
+        or  (y0 - mapY * TILE_SIZE) * -invDy
+
+    local tEnd = 1.0
+
+    -- ⇣  Immediate hit if we spawn inside a wall
+    if self:get(mapX, mapY) ~= TILE_TYPE_EMPTY
+       and self:get(mapX, mapY) ~= TILE_TYPE_BRIDGE then
+        return x0, y0, mapX, mapY
+    end
+
+    while true do
+        -- choose the next grid boundary we will cross
+        local tNext, stepAxis = math.min(tMaxX, tMaxY),
+                                (tMaxX <= tMaxY and "x" or "y")
+
+        -- ⇣  stop if the next boundary is *beyond* the end‑point
+        if tNext > tEnd then return nil end
+
+        -- advance to the neighbouring tile
+        if stepAxis == "x" then
+            mapX  = mapX + stepX
+            tMaxX = tMaxX + deltaTX
+        else
+            mapY  = mapY + stepY
+            tMaxY = tMaxY + deltaTY
+        end
+
+        -- wall test
+        if self:get(mapX, mapY) ~= TILE_TYPE_EMPTY
+           and self:get(mapX, mapY) ~= TILE_TYPE_BRIDGE then
+            return x0 + dx * tNext,
+                   y0 + dy * tNext,
+                   mapX, mapY
+        end
+
+        -- reached the destination tile with no hit
+        if mapX == endX and mapY == endY then
+            return nil
+        end
+    end
+end
+
+
+
 Map = Object:new()
 function Map:init(file_name)
     self.file_name          = file_name
@@ -152,7 +220,10 @@ function Map:init(file_name)
 
         elseif l.name == "enemies" then
             for _, o in ipairs(l.objects) do
-                local e = ENEMY_MAP[o.name](o.x + o.width / 2, o.y + o.height)
+                local e = ENEMY_MAP[o.name](
+                    o.x + o.width / 2,
+                    o.y + o.height,
+                    self.main)
                 table.insert(self.enemies, e)
             end
         else

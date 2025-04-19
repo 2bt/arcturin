@@ -58,7 +58,7 @@ local STATE_GAMEOVER = 2
 
 
 World = Scene:new({
-    active_area = Box(0, 0, W + TILE_SIZE * 2, H + TILE_SIZE * 2),
+    active_area = Box(0, 0, W + TILE_SIZE * 4, H + TILE_SIZE * 4),
 })
 function World:init(heroes, map)
     self.state         = STATE_PLAY
@@ -343,6 +343,7 @@ function World:draw()
 
     TT:checkpoint("draw particles")
     draw_all(self.particles)
+
 
     G.pop()
 
