@@ -104,9 +104,11 @@ end
 function Model:draw(global_transform)
     for i, p in ipairs(self.polys) do
         G.push()
-        local x, y, a = unpack(global_transform[p.bone.i])
-        G.translate(x, y)
-        G.rotate(a)
+        if p.bone then
+            local x, y, a = unpack(global_transform[p.bone.i])
+            G.translate(x, y)
+            G.rotate(a)
+        end
         local c = type(p.color) == "number" and COLORS[p.color] or p.color
         local s = p.shade
         G.setColor(c[1] * s, c[2] * s, c[3] * s)

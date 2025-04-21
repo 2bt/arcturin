@@ -10,6 +10,12 @@ function UfoEnemy:init(x, y)
     self.step_counter = 0
     self.phase        = 0
 end
+
+function UfoEnemy:die()
+    Enemy.die(self)
+    -- spawn power-up
+    World:add_collectable(HealthPowerUp(self.box:get_center()))
+end
 function UfoEnemy:sub_update()
 
     self.phase = self.phase + 0.12

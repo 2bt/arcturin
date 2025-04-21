@@ -70,6 +70,7 @@ function World:init(heroes, map)
     self.hero_bullets  = {}
     self.enemy_bullets = {}
     self.particles     = {}
+    self.collectables  = {}
 
     self.gameover_tween = Tween(0):tween(0, 30):tween(1, 100):tween(1, 60)
 
@@ -92,9 +93,10 @@ function World:init(heroes, map)
     self.camera:set_center(hero_box:center_x() + ox, hero_box:center_y())
 end
 
-function World:add_hero_bullet(bullet)  table.insert(self.hero_bullets, bullet)  end
-function World:add_enemy_bullet(bullet) table.insert(self.enemy_bullets, bullet) end
-function World:add_particle(particle)   table.insert(self.particles, particle)   end
+function World:add_hero_bullet(bullet)      table.insert(self.hero_bullets, bullet) end
+function World:add_enemy_bullet(bullet)     table.insert(self.enemy_bullets, bullet) end
+function World:add_particle(particle)       table.insert(self.particles, particle) end
+function World:add_collectable(collectable) table.insert(self.collectables, collectable) end
 
 
 function World:get_nearest_hero(x, y)
@@ -280,6 +282,9 @@ function World:update()
     TT:checkpoint("update enemy bullets")
     update_alive(self.enemy_bullets)
 
+    TT:checkpoint("update collectables")
+    update_alive(self.collectables)
+
     TT:checkpoint("update particles")
     update_alive(self.particles)
 
@@ -337,13 +342,14 @@ function World:draw()
     draw_alive_and_with_box(self.hero_bullets)
     TT:checkpoint("draw enemy bullets")
     draw_alive_and_with_box(self.enemy_bullets)
+    TT:checkpoint("draw collectables")
+    draw_alive_and_with_box(self.collectables)
 
     TT:checkpoint("draw map main")
     self.map:draw("main")
 
     TT:checkpoint("draw particles")
     draw_all(self.particles)
-
 
     G.pop()
 

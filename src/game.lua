@@ -39,6 +39,7 @@ require("map")
 require("meshgen")
 require("hero_bullet")
 require("hero")
+require("collectable")
 require("title")
 require("world")
 

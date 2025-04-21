@@ -3,33 +3,6 @@ MAX_VY  = 3
 MAX_HP  = 12
 
 
-local TWINKLE_MESH = G.newMesh({
-    {  0,  0, 0, 0, 1, 1, 1, 0.8 },
-    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
-    {  0, -3, 0, 0, 1, 1, 0, 0.2 },
-    {  1, -1, 0, 0, 1, 1, 1, 0.2 },
-    {  3,  0, 0, 0, 1, 1, 0, 0.2 },
-    {  1,  1, 0, 0, 1, 1, 1, 0.2 },
-    {  0,  3, 0, 0, 1, 1, 0, 0.2 },
-    { -1,  1, 0, 0, 1, 1, 1, 0.2 },
-    { -3,  0, 0, 0, 1, 1, 0, 0.2 },
-    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
-})
-local TwinkleParticle = Particle:new()
-function TwinkleParticle:init(x, y)
-    self.x = x
-    self.y = y
-    self.size = Tween(0):tween(0.75, 2):tween(0, 8):kill_when_done(self)
-end
-function TwinkleParticle:sub_update()
-    self.size:update()
-end
-function TwinkleParticle:draw()
-    G.setColor(1, 1, 1)
-    G.draw(TWINKLE_MESH, self.x, self.y, 0, self.size.value)
-end
-
-
 local HeroExplosion = Particle:new({
     ttl = 40
 })
@@ -481,6 +454,12 @@ function Hero:update()
     end
 
 
+    -- collect collectables
+    for _, c in ipairs(World.collectables) do
+        if self.box:overlaps(c.box) then
+            c:collect(self)
+        end
+    end
 
     -- check for level exit
     if World.map.exit and self.box:overlaps(World.map.exit) then

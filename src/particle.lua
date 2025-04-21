@@ -20,6 +20,37 @@ function Particle:update()
 end
 
 
+TWINKLE_MESH = G.newMesh({
+    {  0,  0, 0, 0, 1, 1, 1, 0.8 },
+    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
+    {  0, -3, 0, 0, 1, 1, 0, 0.2 },
+    {  1, -1, 0, 0, 1, 1, 1, 0.2 },
+    {  3,  0, 0, 0, 1, 1, 0, 0.2 },
+    {  1,  1, 0, 0, 1, 1, 1, 0.2 },
+    {  0,  3, 0, 0, 1, 1, 0, 0.2 },
+    { -1,  1, 0, 0, 1, 1, 1, 0.2 },
+    { -3,  0, 0, 0, 1, 1, 0, 0.2 },
+    { -1, -1, 0, 0, 1, 1, 1, 0.2 },
+})
+TwinkleParticle = Particle:new()
+function TwinkleParticle:init(x, y, delay)
+    self.x = x
+    self.y = y
+    self.size = Tween(0)
+    if delay and delay > 0 then self.size:tween(0, delay) end
+    self.size:tween(0.75, 2):tween(0, 8):kill_when_done(self)
+end
+function TwinkleParticle:sub_update()
+    self.size:update()
+end
+function TwinkleParticle:draw()
+    G.setColor(1, 1, 1)
+    G.draw(TWINKLE_MESH, self.x, self.y, 0, self.size.value)
+end
+
+
+
+
 FlashParticle = Particle:new({
     R = { 1, 1.1, 0.8, 0.6, 0.3}
 })
@@ -173,3 +204,5 @@ function make_sparks(x, y)
         World:add_particle(SparkParticle(x, y))
     end
 end
+
+

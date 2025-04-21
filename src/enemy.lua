@@ -31,7 +31,7 @@ function Enemy:update()
             self.inactive_count = 0
         else
             self.inactive_count = self.inactive_count + 1
-            if self.inactive_count > 10 then
+            if self.inactive_count > 30 then
                 self.inactive_count = 0
                 self.active = false
                 self:deactivate()
@@ -46,7 +46,8 @@ function Enemy:update()
 
 
     if self.box.y > World.map.h * TILE_SIZE then
-        self:die()
+        -- enemy fell into abyss
+        self.alive = false
     end
 end
 function Enemy:draw()
