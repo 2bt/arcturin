@@ -129,7 +129,7 @@ function DragonEnemy:sub_update()
                     World:add_enemy_bullet(FireBall(self.head:center_x() + self.dir * 2, self.head:center_y(), self.dir))
                     self.head_anim:play(ANIM_FIRE)
                     self.fight_counter = 20
-                    self.shoot_counter = random(30, 200)
+                    self.shoot_counter = random(30, 100)
                 end
             else
                 self:set_state(STATE_SLEEP)
