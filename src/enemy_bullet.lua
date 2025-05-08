@@ -8,7 +8,12 @@ local EnemyBullet = Object:new({
 })
 function EnemyBullet:update()
     -- check if still on screen
-    if not self.box:overlaps(World.camera) then
+    local cam = World.camera
+    if self.box.x > cam:right()  and self.vx > 0
+    or self.box.y > cam:bottom() and self.vy > 0
+    or self.box:right()  < cam.x and self.vy < 0
+    or self.box:bottom() < cam.y and self.vy < 0
+    then
         self.alive = false
         return
     end

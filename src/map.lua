@@ -117,6 +117,7 @@ function Layer:draw()
     G.draw(self.mesh)
 end
 
+DEBUG_RAYS = {}
 
 function Layer:raycast(x0, y0, x1, y1)
     local dx, dy = x1 - x0, y1 - y0
@@ -145,7 +146,7 @@ function Layer:raycast(x0, y0, x1, y1)
 
     local tEnd = 1.0
 
-    -- ⇣  Immediate hit if we spawn inside a wall
+    -- Immediate hit if we spawn inside a wall
     if self:get(mapX, mapY) ~= TILE_TYPE_EMPTY
        and self:get(mapX, mapY) ~= TILE_TYPE_BRIDGE then
         return x0, y0, mapX, mapY
@@ -156,7 +157,7 @@ function Layer:raycast(x0, y0, x1, y1)
         local tNext, stepAxis = math.min(tMaxX, tMaxY),
                                 (tMaxX <= tMaxY and "x" or "y")
 
-        -- ⇣  stop if the next boundary is *beyond* the end‑point
+        -- stop if the next boundary is *beyond* the end‑point
         if tNext > tEnd then return nil end
 
         -- advance to the neighbouring tile
@@ -171,9 +172,8 @@ function Layer:raycast(x0, y0, x1, y1)
         -- wall test
         if self:get(mapX, mapY) ~= TILE_TYPE_EMPTY
            and self:get(mapX, mapY) ~= TILE_TYPE_BRIDGE then
-            return x0 + dx * tNext,
-                   y0 + dy * tNext,
-                   mapX, mapY
+            -- table.insert(DEBUG_RAYS, { x0, y0, x0 + dx * tNext, y0 + dy * tNext })
+            return x0 + dx * tNext, y0 + dy * tNext, mapX, mapY
         end
 
         -- reached the destination tile with no hit
@@ -396,5 +396,9 @@ function Map:draw(layer)
 
             end
         end
+
+        -- DEBUG: render raycasts
+        for _, r in ipairs(DEBUG_RAYS) do G.line(unpack(r)) end
+        DEBUG_RAYS = {}
     end
 end

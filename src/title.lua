@@ -5,6 +5,11 @@ function Scene:update() end
 function Scene:draw() end
 
 
+local STATE_BLEND = 1
+local STATE_LOAD  = 2
+local STATE_READY = 3
+
+
 LevelLoader = Scene:new({
     levels = {
         -- "assets/test-map.json",
@@ -14,23 +19,23 @@ LevelLoader = Scene:new({
 })
 function LevelLoader:init(heroes)
     self.level_number = 1
-    self.state        = "blend"
+    self.state        = STATE_BLEND
     self.heroes       = heroes
 end
 function LevelLoader:leave()
     self.level_number = self.level_number + 1
-    self.state        = "blend"
+    self.state        = STATE_BLEND
 end
 function LevelLoader:update()
-    if self.state == "blend" then
+    if self.state == STATE_BLEND then
         if Game.blend == 0 then
-            self.state = "load"
+            self.state = STATE_LOAD
         end
-    elseif self.state == "load" then
-        self.state = "ready"
+    elseif self.state == STATE_LOAD then
+        self.state = STATE_READY
         local map  = Map(self.levels[self.level_number])
         World:init(self.heroes, map)
-    elseif self.state == "ready" then
+    elseif self.state == STATE_READY then
         for _, input in ipairs(Title.player_inputs) do
             if input:is_just_pressed("a", "start") then
                 Game:change_scene(World)
@@ -44,9 +49,9 @@ function LevelLoader:draw()
     G.setFont(FONT_NORMAL)
 
     G.printf(string.format("Level %d", self.level_number), 0, H/2 - 10, W, "center")
-    if self.state == "load" then
+    if self.state == STATE_LOAD then
         G.printf(string.format("Loading...", self.state), 0, H/2 + 10, W, "center")
-    elseif self.state == "ready" then
+    elseif self.state == STATE_READY then
         G.printf(string.format("Ready", self.state), 0, H/2 + 10, W, "center")
     end
 end

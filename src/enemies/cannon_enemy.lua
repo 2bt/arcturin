@@ -47,6 +47,8 @@ end
 
 
 function CannonEnemy:get_visible_hero()
+    if not self.box:overlaps(World.camera) then return nil end
+
     local x, y = self.box:get_center()
     local best_da = math.huge
     local best_ta
@@ -54,7 +56,11 @@ function CannonEnemy:get_visible_hero()
     for _, h in ipairs(World.heroes) do
         if h:is_targetable() then
             local hx, hy = h.box:get_center()
-            if not World.map.main:raycast(x, y, hx, hy) then
+            local is_visible = not World.map.main:raycast(x+2, y, hx+2, hy)
+                           and not World.map.main:raycast(x-2, y, hx-2, hy)
+                           and not World.map.main:raycast(x, y+2, hx,   hy+2)
+                           and not World.map.main:raycast(x, y-2, hx,   hy-2)
+            if is_visible then
                 local dx = h.box:center_x() - x
                 local dy = h.box:center_y() - y
                 local ta = math.atan2(dx, -dy)
@@ -92,7 +98,7 @@ function CannonEnemy:sub_update()
         end
     elseif self.state == STATE_TARGET then
         local da = delta_angle(self.ang, self.target_ang)
-        local SPEED = 0.02
+        local SPEED = 0.03
         self.ang = self.ang + clamp(da, -SPEED, SPEED)
         if da == 0 then
             self.state   = STATE_IDLE
@@ -100,7 +106,7 @@ function CannonEnemy:sub_update()
             local h, ta = self:get_visible_hero()
             if h then
                 self.target_ang = ta
-                if math.abs(delta_angle(self.ang, self.target_ang)) < 0.5 then
+                if math.abs(delta_angle(self.ang, self.target_ang)) < 0.1 then
                     self.state   = STATE_SHOOT
                     self.counter = 0
                 end

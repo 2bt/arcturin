@@ -21,10 +21,10 @@ function PowerUp:init(x, y)
     self.box     = Box.make_centered(x, y, 8, 8)
     self.vx      = randf(-1.8, 1.8)
     self.vy      = randf(-3.5, -2)
-    self.ty      = y + randf(-20, 10)
+    self.ty      = y + randf(-10, 20)
     self.state   = STATE_JUMP
     self.counter = 0
-    self.tick    = 0
+    self.tick    = randf(0, 100)
 end
 function PowerUp:update()
     self.tick = self.tick + 1
@@ -46,9 +46,9 @@ function PowerUp:update()
             self.vy = -vy
         end
     elseif self.state == STATE_FLOAT then
-        self.vx = self.vx * 0.7
+        self.vx = self.vx * 0.7 + math.sin(self.tick * 0.11) * 0.02
         self.vy = clamp(self.vy, -2, 2)
-        self.vy = mix(-0.05, self.vy, 0.7)
+        self.vy = mix(-0.05, self.vy, 0.7) + math.cos(self.tick * 0.13) * 0.02
         World:move_x(self.box, self.vx)
         World:move_y(self.box, self.vy - 0.02)
     end
@@ -68,7 +68,7 @@ HealthPowerUp = PowerUp:new()
 function HealthPowerUp:draw()
 
     local color = mix(
-        { 0.41, 0.22, 0.17, 1 },
+        { 0.6, 0.3, 0.2, 1 },
         { 0.6, 0.4, 0.35, 0.7 },
         math.sin(self.tick * 0.2) * 0.5 + 0.5)
 
