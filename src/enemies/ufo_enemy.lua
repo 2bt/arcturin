@@ -14,7 +14,9 @@ end
 function UfoEnemy:die()
     Enemy.die(self)
     -- spawn power-up
-    World:add_collectable(HealthPowerUp(self.box:get_center()))
+    if random(1, 4) == 1 then
+        World:add_collectable(HealthPowerUp(self.box:get_center()))
+    end
 end
 function UfoEnemy:sub_update()
 

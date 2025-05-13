@@ -39,6 +39,7 @@ function CannonEnemy:init(x, y, walls)
 
     self.state      = STATE_IDLE
     self.counter    = 0
+    self.wait_counter = 0
     self.target_ang = self.ang
     self.foot_ang   = self.ang
     self.ang        = self.ang + randf(-1, 1)
@@ -79,40 +80,50 @@ end
 
 function CannonEnemy:sub_update()
 
-    if self.state == STATE_IDLE then
+    if self.wait_counter > 0 then
+        self.wait_counter = self.wait_counter - 1
+
+    elseif self.state == STATE_IDLE then
 
         local da = delta_angle(self.foot_ang, self.ang)
         if da > math.pi *  0.5 then self.turn_dir = -1 end
         if da < math.pi * -0.5 then self.turn_dir =  1 end
-        self.ang = self.ang + self.turn_dir * 0.01
-
+        local SPEED = 0.015
+        self.ang = self.ang + self.turn_dir * SPEED
 
         self.counter = self.counter - 1
         if self.counter <= 0 then
-            self.counter = random(20, 40)
+            self.counter = random(10, 15)
             local h, ta = self:get_visible_hero()
-            if h then
+            if h and math.abs(delta_angle(self.ang, ta)) < 0.9 then
                 self.state      = STATE_TARGET
                 self.target_ang = ta
             end
         end
+
     elseif self.state == STATE_TARGET then
+
+        self.counter = self.counter - 1
+        if self.counter <= 0 then
+            self.counter = random(10, 15)
+            local h, ta = self:get_visible_hero()
+            if h then
+                self.target_ang = ta
+            else
+                self.wait_counter = 30
+                self.state = STATE_IDLE
+            end
+        end
+
         local da = delta_angle(self.ang, self.target_ang)
         local SPEED = 0.03
         self.ang = self.ang + clamp(da, -SPEED, SPEED)
         if da == 0 then
-            self.state   = STATE_IDLE
-            self.counter = random(20, 40)
-            local h, ta = self:get_visible_hero()
-            if h then
-                self.target_ang = ta
-                if math.abs(delta_angle(self.ang, self.target_ang)) < 0.1 then
-                    self.state   = STATE_SHOOT
-                    self.counter = 0
-                end
-            end
+            self.state   = STATE_SHOOT
+            self.counter = 0
         end
     elseif self.state == STATE_SHOOT then
+        self.counter = self.counter + 1
         if self.counter == 10
         or self.counter == 20
         or self.counter == 30
@@ -128,9 +139,10 @@ function CannonEnemy:sub_update()
             self.anim_manager:play(ANIM_SHOOT)
             self.anim_manager:seek(0)
         end
-        self.counter = self.counter + 1
-        if self.counter > 90 then
-            self.state = STATE_TARGET
+        if self.counter == 30 then
+            self.state        = STATE_IDLE
+            self.counter      = 0
+            self.wait_counter = 60
         end
     end
 
