@@ -129,6 +129,7 @@ function FlyEnemy:sub_draw()
     G.push()
     G.translate(self.box:get_center())
     G.scale(0.03)
+    G.rotate(clamp(self.vx * 0.5, -1.5, 1.5))
     self.anim_manager:draw()
     G.pop()
 end
