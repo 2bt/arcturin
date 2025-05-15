@@ -20,7 +20,7 @@
          "height":200,
          "id":1,
          "name":"main",
-         "opacity":0.51,
+         "opacity":0.67,
          "type":"tilelayer",
          "visible":true,
          "width":400,
@@ -249,8 +249,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":982,
-                 "y":760
+                 "x":1126,
+                 "y":696
                 }, 
                 {
                  "height":16,
@@ -469,8 +469,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":772,
-                 "y":680
+                 "x":846,
+                 "y":656
                 }, 
                 {
                  "height":16,
@@ -491,8 +491,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":780,
-                 "y":710
+                 "x":970,
+                 "y":724
                 }, 
                 {
                  "height":16,
@@ -1712,8 +1712,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":1352,
-                 "y":736
+                 "x":1004,
+                 "y":672
                 }, 
                 {
                  "height":16,
@@ -1723,19 +1723,8 @@
                  "type":"",
                  "visible":true,
                  "width":16,
-                 "x":1050,
-                 "y":576
-                }, 
-                {
-                 "height":16,
-                 "id":313,
-                 "name":"cannon",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":16,
-                 "x":1580,
-                 "y":784
+                 "x":1056,
+                 "y":616
                 }, 
                 {
                  "height":16,
@@ -1846,6 +1835,105 @@
                  "width":16,
                  "x":2116,
                  "y":1160
+                }, 
+                {
+                 "height":16,
+                 "id":324,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":448,
+                 "y":816
+                }, 
+                {
+                 "height":16,
+                 "id":325,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":288,
+                 "y":1052
+                }, 
+                {
+                 "height":16,
+                 "id":326,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":524,
+                 "y":1112
+                }, 
+                {
+                 "height":16,
+                 "id":327,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":204,
+                 "y":936
+                }, 
+                {
+                 "height":16,
+                 "id":328,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":228,
+                 "y":640
+                }, 
+                {
+                 "height":16,
+                 "id":329,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":2444,
+                 "y":1216
+                }, 
+                {
+                 "height":16,
+                 "id":330,
+                 "name":"walker",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":2622,
+                 "y":1216
+                }, 
+                {
+                 "height":16,
+                 "id":332,
+                 "name":"walker",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":2534,
+                 "y":1184
+                }, 
+                {
+                 "height":16,
+                 "id":333,
+                 "name":"cannon",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":16,
+                 "x":2392,
+                 "y":1152
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1876,8 +1964,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":80,
-                 "x":3120,
+                 "width":56,
+                 "x":3144,
                  "y":960
                 }],
          "opacity":1,
@@ -1887,7 +1975,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":324,
+ "nextobjectid":334,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.8.2",
