@@ -95,7 +95,7 @@ function CannonEnemy:sub_update()
         if self.counter <= 0 then
             self.counter = random(10, 15)
             local h, ta = self:get_visible_hero()
-            if h and math.abs(delta_angle(self.ang, ta)) < 0.9 then
+            if h and math.abs(delta_angle(self.ang, ta)) < 1.2 then
                 self.state      = STATE_TARGET
                 self.target_ang = ta
             end
