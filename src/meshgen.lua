@@ -268,8 +268,8 @@ local function voronoi(layer, x, y)
     local function point(x, y)
         local f = 9.321
         return {
-            x * 8 + mix(-1, 9, noise(x * f, y * f, 1.234)),
-            y * 8 + mix(-1, 9, noise(x * f, y * f, 4.567)),
+            x * 8 + mix(-2, 10, noise(x * f, y * f, 1.234, layer.index)),
+            y * 8 + mix(-2, 10, noise(x * f, y * f, 4.567, layer.index)),
         }
     end
 
@@ -296,7 +296,7 @@ local function voronoi(layer, x, y)
                 else
                     local qx = x + ox * 0.5
                     local qy = y + oy * 0.5
-                    local q = noise(qx * 11.345, qy * 11.345)
+                    local q = noise(qx * 11.345, qy * 11.345, layer.index)
                     local ratio = 0.5 + mix(-1, 1, q) * 0.4
                     if ox > 0 or (ox == 0 and oy > 0) then ratio = 1 - ratio end
                     local gap = 0.6
@@ -355,8 +355,8 @@ local function generate_rocks(layer, b)
                 x = x + pad
                 y = y + pad
             end
-            x = x + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 0.0))
-            y = y + mix(-1.25, 1.25, noise(x*0.57, y*0.57, 13.69))
+            x = x + mix(-1.5, 1.5, noise(x*0.57, y*0.57, 0.0, layer.index))
+            y = y + mix(-1.5, 1.5, noise(x*0.57, y*0.57, 13.69, layer.index))
         end
         return { x, y, 0, 0, unpack(q < 4 and color1 or color2) }, q == 1 or q == 3
     end

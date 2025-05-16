@@ -234,6 +234,9 @@ function Map:init(file_name)
         end
     end
 
+    self.background.index = 0
+    self.main.index       = 1
+
     self:generate_meshes()
 end
 
