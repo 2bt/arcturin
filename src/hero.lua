@@ -396,7 +396,9 @@ function Hero:update()
     end
 
     -- move hero up to position of highest other player
-    if #World.heroes > 1 and self.box.y > World.camera:bottom() + 5 then
+    if #World.heroes > 1 and self.box.y > World.camera:bottom() + 5
+    and self.box.y < World.map.h * TILE_SIZE -- don't prevent fall death
+    then
         local top_h = self
         for _, h in ipairs(World.heroes) do
             if h.state ~= STATE_DEAD and h.box.y < top_h.box.y then
@@ -467,6 +469,7 @@ function Hero:update()
         self.exit_dir   = math.sign(World.map.exit.x - W/2)
     end
 
+    -- death fall
     if self.box.y > World.map.h * TILE_SIZE then
         self:set_state(STATE_DEAD)
     end
