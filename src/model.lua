@@ -18,17 +18,25 @@ function Model:init(file_name)
     self.anims = data.anims
     self.polys = {}
     for _, p in ipairs(data.polys) do
+
+        local c = type(p.color) == "number" and COLORS[p.color] or p.color
+        local s = p.shade
+        local c = { c[1] * s, c[2] * s, c[3] * s }
+
         if love.math.isConvex(p.data) then
-            table.insert(self.polys, p)
+            table.insert(self.polys, {
+                bone  = p.bone,
+                color = c,
+                data  = p.data,
+            })
         else
             -- split up non-convex polygons
             local tris = love.math.triangulate(p.data)
             for _, t in ipairs(tris) do
                 table.insert(self.polys, {
-                    bone = p.bone,
-                    color = p.color,
-                    shade = p.shade,
-                    data = t,
+                    bone  = p.bone,
+                    color = c,
+                    data  = t,
                 })
             end
         end
@@ -109,9 +117,7 @@ function Model:draw(global_transform)
             G.translate(x, y)
             G.rotate(a)
         end
-        local c = type(p.color) == "number" and COLORS[p.color] or p.color
-        local s = p.shade
-        G.setColor(c[1] * s, c[2] * s, c[3] * s)
+        G.setColor(unpack(p.color))
         G.polygon("fill", p.data)
         G.pop()
     end

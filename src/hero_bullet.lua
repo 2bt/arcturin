@@ -82,29 +82,40 @@ function HeroLaser:draw()
     G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h, 1)
 end
 
+local function boost_saturation(r, g, b, k)
+    -- Perceptual luminance
+    local y = 0.2126*r + 0.7152*g + 0.0722*b
+    return clamp(y + k*(r - y), 0, 1),
+           clamp(y + k*(g - y), 0, 1),
+           clamp(y + k*(b - y), 0, 1)
+end
 
+local AIM_MESHES = {}
+do
+    for i, color in ipairs(HERO_COLORS) do
+        local c = { boost_saturation(color[1], color[2], color[3], 3) }
+        local v = {}
+        for x = -5, 5, 0.5 do
+            local y1 = math.cos(x * 0.14) * 22 - 18
+            local y2 = math.min(y1, -1)
+            table.insert(v, { x, y1, 0, 0, 1, 1, 1, 1 })
+            table.insert(v, { x, y2, 0, 0, c[1], c[2], c[3], 0.2 })
+        end
+        AIM_MESHES[i] = G.newMesh(v, "strip", "static")
+    end
+end
 HeroAimShot = HeroBullet:new()
-function HeroAimShot:init(x, y, a)
+function HeroAimShot:init(index, x, y, a)
     self.box = Box.make_centered(x, y, 5, 5)
     self.vx  = math.sin(a) * 4
     self.vy  = math.cos(a) * 4
     self.a   = a
     self.ttl = 16
-end
-local AIM_MESH
-do
-    local v = {}
-    for x = -5, 5, 0.5 do
-        local y1 = math.cos(x * 0.14) * 22 - 18
-        local y2 = math.min(y1, -1)
-        table.insert(v, { x, y1, 0, 0, 1, 1, 0.9, 1 })
-        table.insert(v, { x, y2, 0, 0, 1, 0.2, 0.2, 0 }) -- red tint
-    end
-    AIM_MESH = G.newMesh(v, "strip", "static")
+    self.mesh = AIM_MESHES[index]
 end
 function HeroAimShot:draw()
     G.setColor(1, 1, 1)
-    G.draw(AIM_MESH, self.box:center_x(), self.box:center_y(), -self.a)
+    G.draw(self.mesh, self.box:center_x(), self.box:center_y(), -self.a)
     -- G.setColor(1, 0, 1)
     -- G.rectangle("fill", self.box.x, self.box.y, self.box.w, self.box.h)
 end

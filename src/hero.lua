@@ -1,6 +1,12 @@
-GRAVITY = 0.2
-MAX_VY  = 3
-MAX_HP  = 12
+GRAVITY     = 0.2
+MAX_VY      = 3
+MAX_HP      = 12
+HERO_COLORS = {
+    { 0.42, 0.28, 0.25 },
+    { 0.25, 0.39, 0.18 },
+    { 0.22, 0.32, 0.35 },
+    { 0.29, 0.26, 0.50 },
+}
 
 
 local HeroExplosion = Particle:new({
@@ -338,7 +344,7 @@ function Hero:update()
             local a = self.dir * self.aim * math.pi
             local muzzle_x = self.box:center_x() + AIM_OFFSET.x[self.aim] * self.dir
             local muzzle_y = self.box:bottom()   + AIM_OFFSET.y[self.aim]
-            World:add_hero_bullet(HeroAimShot(muzzle_x, muzzle_y, a))
+            World:add_hero_bullet(HeroAimShot(self.index, muzzle_x, muzzle_y, a))
         end
 
         if self.shoot_counter == 0 then
@@ -495,9 +501,7 @@ function Hero:draw()
     end
 
     -- give each player a unique body color
-    HERO_MODEL.polys[BODY_POLY].color = ({ 11, 4, 6, 15 })[self.index] or 11
-    HERO_MODEL.polys[BODY_POLY].shade = ({ 0.7, 0.5, 0.7, 0.7 })[self.index] or 0.7
-
+    HERO_MODEL.polys[BODY_POLY].color = HERO_COLORS[self.index] or HERO_COLORS[1]
 
     local x, y, w, h = G.getScissor()
     if self.state == STATE_SPAWN then

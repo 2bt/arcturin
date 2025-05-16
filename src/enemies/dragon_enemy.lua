@@ -10,15 +10,7 @@ local STATE_DYING = 3
 
 local MODEL_HEAD = Model("assets/models/dragon-head.model")
 local MODEL_BODY = Model("assets/models/dragon-body.model")
-local EYE_POLY = nil
-do
-    for _, p in ipairs(MODEL_HEAD.polys) do
-        if p.color == 6 then
-            EYE_POLY = p
-            break
-        end
-    end
-end
+local EYE_POLY   = MODEL_HEAD.polys[#MODEL_HEAD.polys] -- eye is last polygon
 
 
 DragonEnemy = Enemy:new()
@@ -245,11 +237,9 @@ end
 
 function DragonEnemy:sub_draw()
     if self.state == STATE_SLEEP then
-        EYE_POLY.color = 16
-        EYE_POLY.shade = 0.4
+        EYE_POLY.color = { 0.23, 0.23, 0.23 }
     else
-        EYE_POLY.color = 6
-        EYE_POLY.shade = 1.2
+        EYE_POLY.color = { 0.42, 0.66, 0.32 }
     end
 
     for i, s in ipairs(self.segments) do
