@@ -33,7 +33,7 @@ function CannonEnemy:init(x, y, walls)
         self.ang = math.pi * -0.5
     end
 
-    self.hp           = 7
+    self.hp           = 12
     self.anim_manager = AnimationManager(MODEL)
     self.anim_manager:play(ANIM_IDLE)
 
@@ -44,6 +44,15 @@ function CannonEnemy:init(x, y, walls)
     self.foot_ang   = self.ang
     self.ang        = self.ang + randf(-1, 1)
     self.turn_dir   = random(0, 1) == 0 and -1 or 1
+    self.scan_ang   = 0
+end
+function CannonEnemy:take_hit(power)
+    Enemy.take_hit(self, power)
+    self.scan_ang = math.pi
+    self.wait_counter = 0
+    if self.state == STATE_IDLE then
+        self.counter = 0
+    end
 end
 
 
@@ -80,6 +89,8 @@ end
 
 function CannonEnemy:sub_update()
 
+    self.scan_ang = math.max(self.scan_ang - 0.05, 1.2)
+
     if self.wait_counter > 0 then
         self.wait_counter = self.wait_counter - 1
 
@@ -95,7 +106,7 @@ function CannonEnemy:sub_update()
         if self.counter <= 0 then
             self.counter = random(10, 15)
             local h, ta = self:get_visible_hero()
-            if h and math.abs(delta_angle(self.ang, ta)) < 1.2 then
+            if h and math.abs(delta_angle(self.ang, ta)) < self.scan_ang then
                 self.state      = STATE_TARGET
                 self.target_ang = ta
             end
