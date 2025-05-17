@@ -25,6 +25,7 @@ function PowerUp:init(x, y)
     self.state   = STATE_JUMP
     self.counter = 0
     self.tick    = randf(0, 100)
+    self.ttl     = 0
 end
 function PowerUp:update()
     self.tick = self.tick + 1
@@ -51,6 +52,16 @@ function PowerUp:update()
         self.vy = mix(-0.05, self.vy, 0.7) + math.cos(self.tick * 0.13) * 0.02
         World:move_x(self.box, self.vx)
         World:move_y(self.box, self.vy - 0.02)
+    end
+
+    -- disappear after a while
+    if self.box:overlaps(World.active_area) then
+        self.ttl = 1000
+    else
+        self.ttl = self.ttl - 1
+        if self.ttl <= 0 then
+            self.alive = false
+        end
     end
 end
 function PowerUp:collect(_hero)
