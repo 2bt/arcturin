@@ -191,12 +191,13 @@ function make_explosion(x, y)
     for i = 1, 7 do
         World:add_particle(DebrisParticle(x, y))
     end
-
     local N = 20
     for i = 1, N do
         World:add_particle(DustParticle(x, y, i * 2 * math.pi / N))
     end
     World:add_particle(FlashParticle(x, y, 10))
+
+    World.shaker:shake()
 end
 
 function make_sparks(x, y)

@@ -1,3 +1,68 @@
+local TimeTracker = Object:new()
+function TimeTracker:init()
+    self.checkpoint_map     = {}
+    self.checkpoints        = {}
+    self.current_checkpoint = nil
+end
+function TimeTracker:checkpoint(name)
+    local t = love.timer.getTime()
+    self:stop(t)
+    local c = self.checkpoint_map[name]
+    if not c then
+        c = {
+            name = name,
+        }
+        table.insert(self.checkpoints, c)
+        self.checkpoint_map[name] = c
+    end
+    c.t1 = t
+    self.current_checkpoint = c
+end
+function TimeTracker:stop(t)
+    if self.current_checkpoint then
+        local c = self.current_checkpoint
+        self.current_checkpoint = nil
+        c.t2 = t or love.timer.getTime()
+        c.time = c.t2 - c.t1
+    end
+end
+function TimeTracker:draw()
+    for i, c in ipairs(self.checkpoints) do
+        G.setColor(1, 1, 1, 0.5)
+        G.print(string.format("%-20s %3d", c.name, c.time * 10000), 4, 30 + (i-1) * 6)
+        G.rectangle("fill", 80, 31 + (i - 1) * 6, c.time * 1000, 4)
+    end
+end
+local TT = TimeTracker()
+
+
+local Shaker = Object:new()
+function Shaker:init()
+    self.magnitude = 0
+    self.seed_x    = 0
+    self.seed_y    = 0
+    self.pos       = 0
+    self.x         = 0
+    self.y         = 0
+end
+function Shaker:shake()
+    self.seed_x    = randf(0, 1000)
+    self.seed_y    = randf(0, 1000)
+    self.pos       = 0
+    self.magnitude = self.magnitude + 1
+end
+function Shaker:update()
+    local SPEED = 0.1
+    self.pos = self.pos + SPEED
+
+    self.magnitude = math.max(0, (self.magnitude + 0.1) * 0.95 - 0.1)
+
+
+    self.x = (love.math.noise(self.pos, self.seed_x) * 2 - 1) * self.magnitude
+    self.y = (love.math.noise(self.pos, self.seed_y) * 2 - 1) * self.magnitude
+end
+
+
 local BACKGROUND_SHADER = G.newShader([[
 float gradient_noise(in vec2 uv) {
     return fract(52.9829189 * fract(dot(uv, vec2(0.06711056, 0.00583715))));
@@ -56,10 +121,10 @@ end
 local STATE_PLAY     = 1
 local STATE_GAMEOVER = 2
 
-
 World = Scene:new({
     active_area = Box(0, 0, W + TILE_SIZE * 4, H + TILE_SIZE * 4),
 })
+
 function World:init(heroes, map)
     self.state         = STATE_PLAY
     self.heroes        = heroes
@@ -71,6 +136,7 @@ function World:init(heroes, map)
     self.enemy_bullets = {}
     self.particles     = {}
     self.collectables  = {}
+    self.shaker        = Shaker()
 
     self.gameover_tween = Tween(0):tween(0, 30):tween(1, 100):tween(1, 60)
 
@@ -209,48 +275,6 @@ function World:update_camera()
     self.active_area:set_center(self.camera:get_center())
 end
 
-
-
-local TimeTracker = Object:new()
-function TimeTracker:init()
-    self.checkpoint_map     = {}
-    self.checkpoints        = {}
-    self.current_checkpoint = nil
-end
-function TimeTracker:checkpoint(name)
-    local t = love.timer.getTime()
-    self:stop(t)
-    local c = self.checkpoint_map[name]
-    if not c then
-        c = {
-            name = name,
-        }
-        table.insert(self.checkpoints, c)
-        self.checkpoint_map[name] = c
-    end
-    c.t1 = t
-    self.current_checkpoint = c
-end
-function TimeTracker:stop(t)
-    if self.current_checkpoint then
-        local c = self.current_checkpoint
-        self.current_checkpoint = nil
-        c.t2 = t or love.timer.getTime()
-        c.time = c.t2 - c.t1
-    end
-end
-function TimeTracker:draw()
-    for i, c in ipairs(self.checkpoints) do
-        G.setColor(1, 1, 1, 0.5)
-        G.print(string.format("%-20s %3d", c.name, c.time * 10000), 4, 30 + (i-1) * 6)
-        G.rectangle("fill", 80, 31 + (i - 1) * 6, c.time * 1000, 4)
-    end
-end
-local TT = TimeTracker()
-
-
-
-
 function World:update()
 
     TT:checkpoint("update solids")
@@ -292,6 +316,7 @@ function World:update()
     self.map:update()
     TT:stop()
 
+    self.shaker:update()
 
 
     if self.state == STATE_PLAY then
@@ -325,7 +350,7 @@ function World:draw()
     TT:checkpoint("draw map bg")
     draw_background()
 
-    G.translate(-self.camera.x, -self.camera.y)
+    G.translate(-self.camera.x + self.shaker.x, -self.camera.y + self.shaker.y)
 
     self.map:draw("background")
 
