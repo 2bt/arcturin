@@ -49,7 +49,6 @@ end
 function CannonEnemy:take_hit(power)
     Enemy.take_hit(self, power)
     self.scan_ang = math.pi
-    self.wait_counter = 0
     if self.state == STATE_IDLE then
         self.counter = 0
     end
