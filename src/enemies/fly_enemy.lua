@@ -35,8 +35,8 @@ end
 
 function FlyEnemy:set_state(state)
     if state == STATE_WAIT then
-        self.tx = self.wx + randf(-20, 20)
-        self.ty = self.wy + randf(-20, 20)
+        self.tx = self.wx + randf(-10, 10)
+        self.ty = self.wy + randf(-10, 10)
         self.counter = random(10, 30)
     elseif state == STATE_ATTACK then
         self.tx = self.hero.box:center_x() + randf(-7, 7)
@@ -50,10 +50,11 @@ function FlyEnemy:sub_update()
 
     if self.state == STATE_WAIT then
 
-        local dx = clamp(self.tx - self.box:center_x(), -1.3, 1.3)
-        local dy = clamp(self.ty - self.box:center_y(), -1.3, 1.3)
-        self.vx = mix(self.vx, dx, 0.03)
-        self.vy = mix(self.vy, dy, 0.03)
+        local SPEED = 0.9
+        local dx = clamp(self.tx - self.box:center_x(), -SPEED, SPEED)
+        local dy = clamp(self.ty - self.box:center_y(), -SPEED, SPEED)
+        self.vx = mix(self.vx, dx, 0.01)
+        self.vy = mix(self.vy, dy, 0.01)
 
         local sx = World:move_x(self.box, self.vx)
         local sy = World:move_y(self.box, self.vy)
@@ -103,8 +104,9 @@ function FlyEnemy:sub_update()
             end
         end
 
-        local dx = clamp(self.tx - self.box:center_x(), -2.1, 2.1)
-        local dy = clamp(self.ty - self.box:center_y(), -2.1, 2.1)
+        local SPEED = 2.0
+        local dx = clamp(self.tx - self.box:center_x(), -SPEED, SPEED)
+        local dy = clamp(self.ty - self.box:center_y(), -SPEED, SPEED)
         self.vx = mix(self.vx, dx, 0.03)
         self.vy = mix(self.vy, dy, 0.03)
 
