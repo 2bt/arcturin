@@ -198,6 +198,12 @@ function make_explosion(x, y)
     World:add_particle(FlashParticle(x, y, 10))
 
     World.shaker:shake()
+
+    for _, e in ipairs(World.enemies) do
+        if e.alive and e.active then
+            e:on_explosion(x, y)
+        end
+    end
 end
 
 function make_sparks(x, y)

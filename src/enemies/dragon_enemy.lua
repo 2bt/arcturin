@@ -12,7 +12,6 @@ local MODEL_HEAD = Model("assets/models/dragon-head.model")
 local MODEL_BODY = Model("assets/models/dragon-body.model")
 local EYE_POLY   = MODEL_HEAD.polys[#MODEL_HEAD.polys] -- eye is last polygon
 
-
 DragonEnemy = Enemy:new()
 function DragonEnemy:init(x, y)
     self.box           = Box.make_above(x, y, 80, 80)
@@ -60,6 +59,12 @@ function DragonEnemy:set_state(state)
     end
 end
 
+function DragonEnemy:on_explosion(x, y)
+    if self.state == STATE_SLEEP and distance(self.tx, self.ty, x, y) < 70 then
+        self:set_state(STATE_FIGHT)
+    end
+end
+
 
 function DragonEnemy:sub_update()
 
@@ -90,8 +95,6 @@ function DragonEnemy:sub_update()
             self:set_state(STATE_FIGHT)
         end
 
-
-
     elseif self.state == STATE_FIGHT then
 
         if self.fight_counter > 0 then
@@ -111,11 +114,6 @@ function DragonEnemy:sub_update()
             if h then
                 -- turn around
                 self.dir = h.box:center_x() < self.sleep_x and -1 or 1
-                -- new target
-                self.tx = self.sleep_x + self.dir * 10 + randf(-20, 20)
-                self.ty = randf(self.sleep_y - 55, self.sleep_y - 10)
-
-
                 -- spit fire
                 if self.shoot_counter == 0 then
                     World:add_enemy_bullet(FireBall(self.head:center_x() + self.dir * 2, self.head:center_y(), self.dir))
@@ -123,7 +121,13 @@ function DragonEnemy:sub_update()
                     self.fight_counter = 20
                     self.shoot_counter = random(30, 100)
                 end
-            else
+            end
+            -- new target
+            self.tx = self.sleep_x + self.dir * 10 + randf(-20, 20)
+            self.ty = randf(self.sleep_y - 55, self.sleep_y - 10)
+
+            -- go back to sleep
+            if not h and random(1, 3) == 1 then
                 self:set_state(STATE_SLEEP)
             end
         end
@@ -153,7 +157,6 @@ function DragonEnemy:sub_update()
     local hx, hy = self.head:get_center()
 
     -- move head a bit forward
-    -- this looks better and lets bullets hit the head more easily
     hx = hx - self.dir * 3
     local dx = hx - rx
 

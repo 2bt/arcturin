@@ -89,7 +89,8 @@ function Enemy:bullet_collision(bullet)
     return nil, nil
 end
 
-
+function Enemy:on_explosion(x, y)
+end
 
 
 require("enemies.ufo_enemy")
