@@ -77,15 +77,10 @@ end
 local HEALTH_MODEL = Model("assets/models/health.model")
 HealthPowerUp = PowerUp:new()
 function HealthPowerUp:draw()
-    -- change color
-    local color = mix(
+    HEALTH_MODEL.polys[1].color = mix(
         { 0.6, 0.3, 0.2, 1 },
         { 0.6, 0.4, 0.35, 0.7 },
         math.sin(self.tick * 0.2) * 0.5 + 0.5)
-    local c = HEALTH_MODEL.polys[1].color
-    c[1] = color[1]
-    c[2] = color[2]
-    c[3] = color[3]
 
     G.push()
     G.translate(self.box:get_center())

@@ -36,13 +36,11 @@ function FlyEnemy:on_explosion(x, y)
 end
 
 function FlyEnemy:set_state(state)
-    self.state   = state
-    self.counter = 0
+    self.state = state
     if state == STATE_ATTACK then
         self.anger_counter = 100
     end
 end
-
 
 function FlyEnemy:sub_update()
 
@@ -80,7 +78,6 @@ function FlyEnemy:sub_update()
             self.vy      = 0
         end
 
-
     elseif self.state == STATE_ATTACK then
         if self.anger_counter > 0 then
             self.anger_counter = self.anger_counter - 1
@@ -97,7 +94,6 @@ function FlyEnemy:sub_update()
                 self:set_state(STATE_WAIT)
             end
         end
-
 
         local SPEED = 2.0
         local dx = clamp(self.tx - self.box:center_x(), -SPEED, SPEED)
